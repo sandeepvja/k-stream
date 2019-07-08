@@ -31,7 +31,7 @@ func (tp TopicPartition) String() string {
 type Consumer interface {
 	Consume(tps []string, handler ReBalanceHandler) (<-chan *Record, error)
 	Rebalanced() <-chan Allocation
-	Partitions(tps []string, handler ReBalanceHandler) (chan *Partition, error)
+	Partitions(tps []string, handler ReBalanceHandler) (chan Partition, error)
 	Errors() <-chan *Error
 	//PartitionConsumer() (PartitionConsumer, error)
 	Commit() error
@@ -128,7 +128,7 @@ func (c *consumer) Consume(tps []string, handler ReBalanceHandler) (<-chan *Reco
 	panic(`to be implemented`)
 }
 
-func (c *consumer) Partitions(tps []string, handler ReBalanceHandler) (chan *Partition, error) {
+func (c *consumer) Partitions(tps []string, handler ReBalanceHandler) (chan Partition, error) {
 	c.reBalanceHandler = handler
 	consumer, err := cluster.NewConsumer(c.config.BootstrapServers, c.config.GroupId, tps, c.config.Config)
 	if err != nil {

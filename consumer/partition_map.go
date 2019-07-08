@@ -15,7 +15,7 @@ type PartitionMap struct {
 	partitions       *sync.Map
 	metricsReporter  metrics.Reporter
 	logger           logger.Logger
-	partitionsBuffer chan *Partition
+	partitionsBuffer chan Partition
 	wg               *sync.WaitGroup
 }
 
@@ -25,24 +25,24 @@ func newPartitionMap(metricsReporter metrics.Reporter, logger logger.Logger) *Pa
 		metricsReporter:  metricsReporter,
 		logger:           logger,
 		wg:               new(sync.WaitGroup),
-		partitionsBuffer: make(chan *Partition, 1000), // TODO get number of partitions and set the partition buffer
+		partitionsBuffer: make(chan Partition, 1000), // TODO get number of partitions and set the partition buffer
 	}
 }
 
-func (m *PartitionMap) partition(tp TopicPartition, saramaPartition sarama.PartitionConsumer) *Partition {
+func (m *PartitionMap) partition(tp TopicPartition, saramaPartition sarama.PartitionConsumer) *partition {
 
-	var p *Partition
+	var p *partition
 
 	// update the partition map
 	existing, ok := m.partitions.Load(tp.String())
 	if !ok {
 		//m.logger.Info(`kStream.consumer.partitionMap`, fmt.Sprintf(`partition [%s] does not exists`, tp))
-		p = &Partition{
+		p = &partition{
 			id:              uuid.New().String(),
 			TopicPartition:  tp,
 			log:             m.logger,
 			SaramaPartition: saramaPartition,
-			Records:         make(chan *Record),
+			records:         make(chan *Record),
 			stopping:        make(chan bool, 1),
 			stopped:         make(chan bool, 1),
 			done:            make(chan bool, 1),
@@ -53,7 +53,7 @@ func (m *PartitionMap) partition(tp TopicPartition, saramaPartition sarama.Parti
 		m.partitions.Store(tp.String(), p)
 		m.partitionsBuffer <- p
 	} else {
-		p = existing.(*Partition)
+		p = existing.(*partition)
 		m.logger.Info(`kStream.consumer.partitionMap`, fmt.Sprintf(`partition [%s] already exist`, tp))
 		// wait until loop stopped
 		p.stop()
@@ -72,13 +72,13 @@ func (m *PartitionMap) partition(tp TopicPartition, saramaPartition sarama.Parti
 
 func (m *PartitionMap) closePartition(tp TopicPartition) {
 	p, _ := m.partitions.Load(tp.String())
-	p.(*Partition).close()
+	p.(*partition).close()
 	m.partitions.Delete(tp.String())
 }
 
 //func (m *PartitionMap) closeUpstreamPartitions(){
 //	m.partitions.Range(func(key, value interface{}) bool {
-//		if err := value.(*Partition).closeUpStream(); err != nil {
+//		if err := value.(*partition).closeUpStream(); err != nil {
 //			m.logger.Error(`k-stream.consumer`, err)
 //		}
 //
@@ -88,9 +88,9 @@ func (m *PartitionMap) closePartition(tp TopicPartition) {
 
 //func (m *PartitionMap) closeDownstreamPartitions(){
 //	m.partitions.Range(func(key, value interface{}) bool {
-//		value.(*Partition).stop()
+//		value.(*partition).stop()
 //
-//		if err := value.(*Partition).closeDownstream(); err != nil {
+//		if err := value.(*partition).closeDownstream(); err != nil {
 //			m.logger.Error(`k-stream.consumer`, err)
 //		}
 //
@@ -105,7 +105,7 @@ func (m *PartitionMap) closeAll() {
 	wg := &sync.WaitGroup{}
 	wg.Add(m.count())
 	m.partitions.Range(func(key, value interface{}) bool {
-		p := value.(*Partition)
+		p := value.(*partition)
 		go func() {
 			p.close()
 			wg.Done()
@@ -132,11 +132,11 @@ func (m *PartitionMap) count() int {
 	return c
 }
 
-type Partition struct {
+type partition struct {
 	id              string
 	log             logger.Logger
 	TopicPartition  TopicPartition
-	Records         chan *Record
+	records         chan *Record
 	upstreamClosed  bool
 	SaramaPartition sarama.PartitionConsumer
 	stopping        chan bool
@@ -150,7 +150,7 @@ type Partition struct {
 	}
 }
 
-func (p *Partition) runMetrics() {
+func (p *partition) runMetrics() {
 	p.metrics.ticker = time.NewTicker(1 * time.Second)
 	for range p.metrics.ticker.C {
 		p.metrics.consumerBuffer.Count(float64(len(p.SaramaPartition.Messages())), nil)
@@ -158,33 +158,41 @@ func (p *Partition) runMetrics() {
 	}
 }
 
-func (p *Partition) closeUpStream() error {
+func (p *partition) closeUpStream() error {
 	return p.SaramaPartition.Close()
 }
 
-//func (p *Partition) notifyOnClose(c chan bool) {
+//func (p *partition) notifyOnClose(c chan bool) {
 //	p.closedNotifications = append(p.closedNotifications, c)
 //}
 
 // stop waits until all the buffers are closed and will make sure downstream processors are done before it exist
-func (p *Partition) stop() {
+func (p *partition) stop() {
 	p.metrics.ticker.Stop()
 	p.stopping <- true
 	<-p.stopped
 }
 
-func (p *Partition) Done() chan bool {
+func (p *partition) Wait() chan bool {
 	return p.done
 }
 
-func (p *Partition) close() {
+func (p *partition) Partition() TopicPartition {
+	return p.TopicPartition
+}
+
+func (p *partition) Records() <-chan *Record {
+	return p.records
+}
+
+func (p *partition) close() {
 	p.log.Info(`kStream.consumer.partition`, fmt.Sprintf(`detaching downstream buffer from consumer buffer on [%s]`, p.TopicPartition))
 	// stop message loop
 	p.stop()
 
 	p.log.Info(`kStream.consumer.partition`, fmt.Sprintf(`downstream partition buffer closed on [%s]`, p.TopicPartition))
 	// close partition message buffer
-	close(p.Records)
+	close(p.records)
 
 	// wait until downstream consumers are done
 	p.log.Info(`kStream.consumer.partition`, fmt.Sprintf(`waiting for downstream consumers for until the processing is finished on [%s]`, p.TopicPartition))
@@ -198,7 +206,7 @@ func (p *Partition) close() {
 	p.log.Info(`kStream.consumer.partition`, fmt.Sprintf(`partition closed on [%s]`, p.TopicPartition))
 }
 
-func (p *Partition) run() {
+func (p *partition) run() {
 	go p.runMetrics()
 
 MessageLoop:
@@ -231,7 +239,7 @@ MessageLoop:
 				fmt.Sprintf(`Received after %d microseconds on %s[%d]`,
 					time.Now().Sub(msg.Timestamp).Nanoseconds()/1000, msg.Topic, msg.Partition))
 
-			p.Records <- record
+			p.records <- record
 
 		case <-p.stopping:
 			p.log.Info(`kStream.consumer.partition`, fmt.Sprintf(`stopping buffer loop on %s`, p.TopicPartition))
