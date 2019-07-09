@@ -41,7 +41,6 @@ func (m *groupOffsetMeta) Wait(tps []TopicPartition, consumerHost string) error 
 	return requestPartitionMeta(meta, m.logger)
 }
 
-
 func (m *groupOffsetMeta) fetchMeta(tps []TopicPartition, consumerHost string) (map[string][]TopicPartition, error) {
 
 	saramaTps := make(map[string][]int32)

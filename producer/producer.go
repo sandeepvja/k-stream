@@ -92,8 +92,16 @@ func NewProducer(configs *Config) (Producer, error) {
 		saramaProducer: prd,
 		logger:         configs.Logger,
 		metrics: &metricsReporter{
-			produceLatency:      configs.MetricsReporter.Observer(`k_stream_producer_produced_latency_microseconds`, labels),
-			batchProduceLatency: configs.MetricsReporter.Observer(`k_stream_producer_batch_produced_latency_microseconds`, append(labels, `size`)),
+			produceLatency: configs.MetricsReporter.Observer(metrics.MetricConf{
+				Path:        `k_stream_producer_produced_latency_microseconds`,
+				Labels:      labels,
+				ConstLabels: map[string]string{`producer_id`: configs.Id},
+			}),
+			batchProduceLatency: configs.MetricsReporter.Observer(metrics.MetricConf{
+				Path:        `k_stream_producer_batch_produced_latency_microseconds`,
+				Labels:      append(labels, `size`),
+				ConstLabels: map[string]string{`producer_id`: configs.Id},
+			}),
 		},
 	}, nil
 }

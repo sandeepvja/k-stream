@@ -66,9 +66,18 @@ func NewPartitionConsumer(c *PartitionConsumerConfig) (PartitionConsumer, error)
 	}
 
 	labels := []string{`topic`, `partition`}
-	pc.metrics.consumerBuffer = c.MetricsReporter.Gauge(`k_stream_partition_consumer_buffer`, append(labels, []string{`type`}...))
-	pc.metrics.consumerBufferMax = c.MetricsReporter.Gauge(`k_stream_partition_consumer_buffer_max`, append(labels, []string{`type`}...))
-	pc.metrics.endToEndLatency = c.MetricsReporter.Observer(`k_stream_partition_consumer_end_to_end_latency_microseconds`, labels)
+	pc.metrics.consumerBuffer = c.MetricsReporter.Gauge(metrics.MetricConf{
+		Path:   `k_stream_partition_consumer_buffer`,
+		Labels: append(labels, []string{`type`}...),
+	})
+	pc.metrics.consumerBufferMax = c.MetricsReporter.Gauge(metrics.MetricConf{
+		Path:   `k_stream_partition_consumer_buffer_max`,
+		Labels: append(labels, []string{`type`}...),
+	})
+	pc.metrics.endToEndLatency = c.MetricsReporter.Observer(metrics.MetricConf{
+		Path:   `k_stream_partition_consumer_end_to_end_latency_microseconds`,
+		Labels: labels,
+	})
 
 	return pc, nil
 }

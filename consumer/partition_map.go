@@ -12,6 +12,7 @@ import (
 )
 
 type PartitionMap struct {
+	id               string
 	partitions       *sync.Map
 	metricsReporter  metrics.Reporter
 	logger           logger.Logger
@@ -19,8 +20,9 @@ type PartitionMap struct {
 	wg               *sync.WaitGroup
 }
 
-func newPartitionMap(metricsReporter metrics.Reporter, logger logger.Logger) *PartitionMap {
+func newPartitionMap(group string, metricsReporter metrics.Reporter, logger logger.Logger) *PartitionMap {
 	return &PartitionMap{
+		id:               group,
 		partitions:       new(sync.Map),
 		metricsReporter:  metricsReporter,
 		logger:           logger,
@@ -47,9 +49,19 @@ func (m *PartitionMap) partition(tp TopicPartition, saramaPartition sarama.Parti
 			stopped:         make(chan bool, 1),
 			done:            make(chan bool, 1),
 		}
-		p.metrics.consumerBuffer = m.metricsReporter.Gauge(`k_stream_consumer_buffer`, nil)
-		p.metrics.consumerBufferMax = m.metricsReporter.Gauge(`k_stream_consumer_buffer_max`, nil)
-		p.metrics.endToEndLatency = m.metricsReporter.Observer(`k_stream_consumer_end_to_end_latency_microseconds`, []string{`topic`, `partition`})
+		p.metrics.consumerBuffer = m.metricsReporter.Gauge(metrics.MetricConf{
+			Path:        `k_stream_consumer_buffer`,
+			ConstLabels: map[string]string{`group`: m.id},
+		})
+		p.metrics.consumerBufferMax = m.metricsReporter.Gauge(metrics.MetricConf{
+			Path:        `k_stream_consumer_buffer_max`,
+			ConstLabels: map[string]string{`group`: m.id},
+		})
+		p.metrics.endToEndLatency = m.metricsReporter.Observer(metrics.MetricConf{
+			Path:        `k_stream_consumer_end_to_end_latency_microseconds`,
+			ConstLabels: map[string]string{`group`: m.id},
+			Labels:      []string{`topic`, `partition`},
+		})
 		m.partitions.Store(tp.String(), p)
 		m.partitionsBuffer <- p
 	} else {

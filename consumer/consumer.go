@@ -33,7 +33,6 @@ type Consumer interface {
 	Rebalanced() <-chan Allocation
 	Partitions(tps []string, handler ReBalanceHandler) (chan Partition, error)
 	Errors() <-chan *Error
-	//PartitionConsumer() (PartitionConsumer, error)
 	Commit() error
 	Mark(record *Record)
 	CommitPartition(topic string, partition int32, offset int64) error
@@ -98,7 +97,7 @@ func NewConsumer(config *Config) (Consumer, error) {
 		stopping:          make(chan bool, 1),
 		stopped:           make(chan bool, 1),
 		reBalanceNotified: sync.NewCond(new(sync.Mutex)),
-		partitionMap:      newPartitionMap(config.MetricsReporter, config.Logger),
+		partitionMap:      newPartitionMap(config.GroupId, config.MetricsReporter, config.Logger),
 	}
 
 	pMeta, err := newPartitionMeta(config, config.Logger)
@@ -117,9 +116,18 @@ func NewConsumer(config *Config) (Consumer, error) {
 	c.context.ctx = ctx
 	c.context.cancel = cancel
 
-	c.metrics.commitLatency = config.MetricsReporter.Observer(`k_stream_consumer_commit_latency_microseconds`, nil)
-	c.metrics.reBalanceLatency = config.MetricsReporter.Observer(`k_stream_consumer_re_balance_latency_microseconds`, nil)
-	c.metrics.reBalancing = config.MetricsReporter.Gauge(`k_stream_consumer_rebalancing`, nil)
+	c.metrics.commitLatency = config.MetricsReporter.Observer(metrics.MetricConf{
+		Path:        `k_stream_consumer_commit_latency_microseconds`,
+		ConstLabels: map[string]string{`group`: c.config.GroupId},
+	})
+	c.metrics.reBalanceLatency = config.MetricsReporter.Observer(metrics.MetricConf{
+		Path:        `k_stream_consumer_re_balance_latency_microseconds`,
+		ConstLabels: map[string]string{`group`: c.config.GroupId},
+	})
+	c.metrics.reBalancing = config.MetricsReporter.Gauge(metrics.MetricConf{
+		Path:        `k_stream_consumer_rebalancing`,
+		ConstLabels: map[string]string{`group`: c.config.GroupId},
+	})
 
 	return c, nil
 }
