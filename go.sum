@@ -75,8 +75,8 @@ github.com/pickme-go/errors v1.0.0 h1:oSFs3trI6yE7NtWJSxgsAnuTqS1X1Iu6/0eA0VJlD9
 github.com/pickme-go/errors v1.0.0/go.mod h1:o9yb7iTUAJgeHhkpxdx1xO+doIxdLzM1gh3NRAqqHuU=
 github.com/pickme-go/log v1.2.3 h1:DVDGyhe6pKpVAYPfVN8G3W7TlhGzrG8r0obTJXLEOUU=
 github.com/pickme-go/log v1.2.3/go.mod h1:7k8BN/9rsPLQwDNRI2iQ8aLO/Lm0WAIa0p+TBWYVor8=
-github.com/pickme-go/metrics v1.0.1 h1:MZ8Lvx+fri/4jpkoiK/x2HimMt49A5xWY+/YnBYoC2g=
-github.com/pickme-go/metrics v1.0.1/go.mod h1:vnwqb3oDHHg5Z6yktWUVNWyuqmf1ECpf4+MvptB+wRU=
+github.com/pickme-go/metrics v1.0.2 h1:H+cYsINGx7DLCSttmZ/G3XcYfS5J/FnBbA91t6PRP04=
+github.com/pickme-go/metrics v1.0.2/go.mod h1:vnwqb3oDHHg5Z6yktWUVNWyuqmf1ECpf4+MvptB+wRU=
 github.com/pickme-go/traceable-context v1.0.0 h1:q9ZOf0MZIIzgwi2YKx5MOP++2vxlqZFck4XZxZubIwk=
 github.com/pickme-go/traceable-context v1.0.0/go.mod h1:di3UG7gaOYqVRF3Q67+6ThEfIQvbebinon0tj+Epiuk=
 github.com/pierrec/lz4 v0.0.0-20190327172049-315a67e90e41 h1:GeinFsrjWz97fAxVUEd748aV0cYL+I6k44gFJTCVvpU=

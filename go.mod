@@ -18,7 +18,7 @@ require (
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/pickme-go/errors v1.0.0
 	github.com/pickme-go/log v1.2.3
-	github.com/pickme-go/metrics v1.0.1
+	github.com/pickme-go/metrics v1.0.2
 	github.com/pickme-go/traceable-context v1.0.0
 	github.com/rcrowley/go-metrics v0.0.0-20190706150252-9beb055b7962
 	github.com/tecbot/gorocksdb v0.0.0-20190705090504-162552197222
