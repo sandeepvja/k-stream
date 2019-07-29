@@ -13,7 +13,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/consumer"
-	"github.com/pickme-go/k-stream/logger"
+	"github.com/pickme-go/log"
 	"github.com/pickme-go/metrics"
 	"time"
 )
@@ -67,7 +67,7 @@ type saramaProducer struct {
 	id             string
 	config         *Config
 	saramaProducer sarama.SyncProducer
-	logger         logger.Logger
+	logger         log.PrefixedLogger
 	metrics        *metricsReporter
 }
 
@@ -77,13 +77,13 @@ type metricsReporter struct {
 }
 
 func NewProducer(configs *Config) (Producer, error) {
-	configs.Logger.Info(`k-stream.saramaProducer`, `saramaProducer [`+configs.Id+`] initiating...`)
+	configs.Logger.Info(`k-stream.sarama-producer`, `saramaProducer [`+configs.Id+`] initiating...`)
 	prd, err := sarama.NewSyncProducer(configs.BootstrapServers, configs.Config)
 	if err != nil {
-		return nil, errors.WithPrevious(err, `k-stream.saramaProducer`, fmt.Sprintf(`[%s] init failed`, configs.Id))
+		return nil, errors.WithPrevious(err, `k-stream.sarama-producer`, fmt.Sprintf(`[%s] init failed`, configs.Id))
 	}
 
-	defer configs.Logger.Info(`k-stream.saramaProducer`, `saramaProducer [`+configs.Id+`] initiated`)
+	defer configs.Logger.Info(`k-stream.sarama-producer`, `saramaProducer [`+configs.Id+`] initiated`)
 
 	labels := []string{`topic`, `partition`}
 	return &saramaProducer{
@@ -107,7 +107,7 @@ func NewProducer(configs *Config) (Producer, error) {
 }
 
 func (p *saramaProducer) Close() error {
-	defer p.logger.Info(`k-stream.saramaProducer`, fmt.Sprintf(`saramaProducer [%s] closed`, p.id))
+	defer p.logger.Info(`k-stream.sarama-producer`, fmt.Sprintf(`saramaProducer [%s] closed`, p.id))
 	return p.saramaProducer.Close()
 }
 
@@ -130,7 +130,7 @@ func (p *saramaProducer) Produce(ctx context.Context, message *consumer.Record) 
 
 	pr, o, err := p.saramaProducer.SendMessage(m)
 	if err != nil {
-		return 0, 0, errors.WithPrevious(err, `k-stream.saramaProducer`, `cannot send message :`)
+		return 0, 0, errors.WithPrevious(err, `k-stream.sarama-producer`, `cannot send message :`)
 	}
 
 	p.metrics.produceLatency.Observe(float64(time.Since(t).Nanoseconds()/1e3), map[string]string{
@@ -138,7 +138,7 @@ func (p *saramaProducer) Produce(ctx context.Context, message *consumer.Record) 
 		`partition`: fmt.Sprint(pr),
 	})
 
-	p.logger.TraceContext(ctx, `k-stream.saramaProducer`, fmt.Sprintf("Delivered message to topic %s [%d] at offset %d",
+	p.logger.TraceContext(ctx, `k-stream.sarama-producer`, fmt.Sprintf("Delivered message to topic %s [%d] at offset %d",
 		message.Topic, pr, o))
 
 	return pr, o, nil
@@ -165,7 +165,7 @@ func (p *saramaProducer) ProduceBatch(ctx context.Context, messages []*consumer.
 
 	err := p.saramaProducer.SendMessages(saramaMessages)
 	if err != nil {
-		return errors.WithPrevious(err, `k-stream.saramaProducer`, `cannot produce batch`)
+		return errors.WithPrevious(err, `k-stream.sarama-producer`, `cannot produce batch`)
 	}
 
 	partition := fmt.Sprint(messages[0].Partition)
@@ -174,6 +174,6 @@ func (p *saramaProducer) ProduceBatch(ctx context.Context, messages []*consumer.
 		`partition`: partition,
 		`size`:      fmt.Sprint(len(messages)),
 	})
-	p.logger.TraceContext(ctx, `k-stream.saramaProducer`, fmt.Sprintf("Message bulk delivered %s[%s]", messages[0].Topic, partition))
+	p.logger.TraceContext(ctx, `k-stream.sarama-producer`, fmt.Sprintf("message bulk delivered %s[%s]", messages[0].Topic, partition))
 	return nil
 }

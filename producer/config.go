@@ -2,7 +2,6 @@ package producer
 
 import (
 	"github.com/Shopify/sarama"
-	"github.com/pickme-go/k-stream/logger"
 	"github.com/pickme-go/log"
 	"github.com/pickme-go/metrics"
 )
@@ -16,7 +15,7 @@ type Config struct {
 	BootstrapServers []string
 	RequiredAcks     RequiredAcks
 	Partitioner      Partitioner
-	Logger           logger.Logger
+	Logger           log.PrefixedLogger
 	MetricsReporter  metrics.Reporter
 }
 
