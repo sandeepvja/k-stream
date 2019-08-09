@@ -1,7 +1,7 @@
 package producer
 
 import (
-	"gitlab.mytaxi.lk/pickme/k-stream/consumer"
+	"github.com/pickme-go/k-stream/consumer"
 	"testing"
 )
 
