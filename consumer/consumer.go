@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/pickme-go/errors"
+	"github.com/pickme-go/log"
 	"github.com/pickme-go/metrics"
+	"time"
 )
 
 func init() {
-	//sarama.Logger = log.New(os.Stdout, ``, log.Lmicroseconds)
+	//sarama.logger = log.New(os.Stdout, ``, log.Lmicroseconds)
 }
 
 type TopicPartition struct {
@@ -64,6 +66,8 @@ func NewConsumer(config *Config) (Consumer, error) {
 		return nil, err
 	}
 
+	config.Logger = config.Logger.NewLog(log.Prefixed(`consumer`))
+
 	c := &consumer{
 		config:         config,
 		consumerErrors: make(chan *Error, 1),
@@ -84,21 +88,22 @@ func (c *consumer) Consume(tps []string, handler ReBalanceHandler) (chan Partiti
 		reBalanceHandler: handler,
 		partitions:       make(chan Partition, 1000),
 		partitionMap:     make(map[string]*partition),
+		logger:           c.config.Logger,
 	}
 	group, err := sarama.NewConsumerGroup(c.config.BootstrapServers, c.config.GroupId, c.config.Config)
 	if err != nil {
-		return nil, errors.WithPrevious(err, `k-stream.consumer`, "Failed to create consumer")
+		return nil, errors.WithPrevious(err, "Failed to create consumer")
 	}
 
 	c.saramaGroup = group
 	c.setUpMetrics()
 
 	// Subscribe for all InputTopics,
-	c.config.Logger.Info(`k-stream.consumer`, fmt.Sprintf(`subscribing to topics %v`, tps))
+	c.config.Logger.Info(fmt.Sprintf(`subscribing to topics %v`, tps))
 
 	go func() {
 		for err := range group.Errors() {
-			c.config.Logger.Error(`k-stream.consumer`, fmt.Sprintf("Error: %+v", err))
+			c.config.Logger.Error(fmt.Sprintf("Error: %+v", err))
 			c.consumerErrors <- &Error{err}
 		}
 	}()
@@ -112,13 +117,15 @@ func (c *consumer) consume(ctx context.Context, tps []string, h sarama.ConsumerG
 CLoop:
 	for {
 		if err := c.saramaGroup.Consume(ctx, tps, h); err != nil {
-			c.config.Logger.Error(`k-stream.consumer`, err)
-			break
+			t := 2 * time.Second
+			c.config.Logger.Error(fmt.Sprintf(`consumer err (%s) while consuming. retrying in %s`, err, t.String()))
+			time.Sleep(t)
+			continue CLoop
 		}
 
 		select {
 		case <-c.context.ctx.Done():
-			c.config.Logger.Info(`k-stream.consumer`, fmt.Sprintf(`stopping consumer due to %s`, c.context.ctx.Err()))
+			c.config.Logger.Info(fmt.Sprintf(`stopping consumer due to %s`, c.context.ctx.Err()))
 			break CLoop
 		default:
 			continue CLoop
@@ -128,38 +135,22 @@ CLoop:
 	c.stopped <- true
 }
 
-func (c *consumer) extractTps(kafkaTps map[string][]int32) []TopicPartition {
-	tps := make([]TopicPartition, 0)
-	for topic, partitions := range kafkaTps {
-		for _, p := range partitions {
-			tps = append(tps, TopicPartition{
-				Topic:     topic,
-				Partition: p,
-			})
-		}
-	}
-	return tps
-}
-
 func (c *consumer) Errors() <-chan *Error {
 	return c.consumerErrors
 }
 
 func (c *consumer) Close() error {
 
-	c.config.Logger.Info(`k-stream.consumer`, `upstream consumer is closing...`)
-	defer c.config.Logger.Info(`k-stream.consumer`, `upstream consumer closed`)
+	c.config.Logger.Info(`upstream consumer is closing...`)
+	defer c.config.Logger.Info(`upstream consumer closed`)
+	defer close(c.saramaGroupHandler.partitions)
 
 	c.context.cancel()
-
 	// close sarama consumer so application will leave from the consumer group
 	if err := c.saramaGroup.Close(); err != nil {
 		c.config.Logger.Error(`k-stream.consumer`,
 			fmt.Sprintf(`cannot close consumer due to %+v`, err))
 	}
-
-	close(c.saramaGroupHandler.partitions)
-
 	return nil
 }
 
@@ -168,7 +159,6 @@ func (c *consumer) setUpMetrics() {
 		Path:        `k_stream_consumer_commit_latency_microseconds`,
 		ConstLabels: map[string]string{`group`: c.config.GroupId},
 	})
-
 	c.saramaGroupHandler.metrics.endToEndLatency = c.config.MetricsReporter.Observer(metrics.MetricConf{
 		Path:        `k_stream_consumer_end_to_latency_latency_microseconds`,
 		Labels:      []string{`topic`, `partition`},

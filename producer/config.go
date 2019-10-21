@@ -15,7 +15,7 @@ type Config struct {
 	BootstrapServers []string
 	RequiredAcks     RequiredAcks
 	Partitioner      Partitioner
-	Logger           log.PrefixedLogger
+	Logger           log.Logger
 	MetricsReporter  metrics.Reporter
 }
 
@@ -37,7 +37,7 @@ func (c *Config) setDefaults() {
 	c.Producer.RequiredAcks = sarama.RequiredAcks(c.RequiredAcks)
 	c.Producer.Return.Errors = true
 	c.Producer.Return.Successes = true
-	c.Logger = log.NewPrefixedNoopLogger()
+	c.Logger = log.NewNoopLogger()
 	c.MetricsReporter = metrics.NoopReporter()
 
 	c.Producer.Compression = sarama.CompressionSnappy

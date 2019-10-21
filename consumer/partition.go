@@ -2,29 +2,29 @@ package consumer
 
 import (
 	"github.com/Shopify/sarama"
+	"github.com/pickme-go/k-stream/data"
 )
 
 type Partition interface {
 	Wait() chan<- bool
-	Records() <-chan *Record
+	Records() <-chan *data.Record
 	Partition() TopicPartition
 	MarkOffset(offset int64)
-	CommitOffset(*Record) error
+	CommitOffset(*data.Record) error
 }
 
 type partition struct {
 	wait         chan bool
-	records      chan *Record
+	records      chan *data.Record
 	groupSession sarama.ConsumerGroupSession
 	partition    TopicPartition
 }
 
-func newPartition(tp TopicPartition, session sarama.ConsumerGroupSession) *partition {
+func newPartition(tp TopicPartition) *partition {
 	return &partition{
-		wait:         make(chan bool, 1),
-		records:      make(chan *Record, 1),
-		partition:    tp,
-		groupSession: session,
+		wait:      make(chan bool, 1),
+		records:   make(chan *data.Record, 1),
+		partition: tp,
 	}
 }
 
@@ -32,7 +32,7 @@ func (p *partition) Wait() chan<- bool {
 	return p.wait
 }
 
-func (p *partition) Records() <-chan *Record {
+func (p *partition) Records() <-chan *data.Record {
 	return p.records
 }
 
@@ -44,7 +44,7 @@ func (p *partition) MarkOffset(offset int64) {
 	p.groupSession.MarkOffset(p.partition.Topic, p.partition.Partition, offset+1, ``)
 }
 
-func (p *partition) CommitOffset(r *Record) error {
+func (p *partition) CommitOffset(r *data.Record) error {
 	p.groupSession.MarkOffset(r.Topic, r.Partition, r.Offset, ``)
 	return nil
 }

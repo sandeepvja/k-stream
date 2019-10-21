@@ -2,16 +2,15 @@ package producer
 
 import (
 	"context"
-	"github.com/pickme-go/k-stream/consumer"
+	"github.com/pickme-go/k-stream/data"
 	"hash"
 	"hash/fnv"
 )
 
 type Pool struct {
-	NumOfWorkers    int64
-	producers       map[int64]Producer
-	producerBuilder Builder
-	hasher          hash.Hash32
+	NumOfWorkers int64
+	producers    map[int64]Producer
+	hasher       hash.Hash32
 }
 
 func NewPool(NumOfWorkers int, builder Builder) (*Pool, error) {
@@ -35,7 +34,7 @@ func NewPool(NumOfWorkers int, builder Builder) (*Pool, error) {
 	return pool, nil
 }
 
-func (p *Pool) Produce(ctx context.Context, message *consumer.Record) (partition int32, offset int64, err error) {
+func (p *Pool) Produce(ctx context.Context, message *data.Record) (partition int32, offset int64, err error) {
 	producer, err := p.producer(message.Key)
 	if err != nil {
 		return 0, 0, err
@@ -44,7 +43,7 @@ func (p *Pool) Produce(ctx context.Context, message *consumer.Record) (partition
 	return producer.Produce(ctx, message)
 }
 
-func (p *Pool) ProduceBatch(ctx context.Context, messages []*consumer.Record) error {
+func (p *Pool) ProduceBatch(ctx context.Context, messages []*data.Record) error {
 	producer, err := p.producer(messages[0].Key)
 	if err != nil {
 		return err

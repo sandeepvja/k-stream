@@ -12,7 +12,7 @@ type Config struct {
 	GroupId          string
 	BootstrapServers []string
 	MetricsReporter  metrics.Reporter
-	Logger           log.PrefixedLogger
+	Logger           log.Logger
 	*sarama.Config
 }
 
@@ -22,13 +22,11 @@ func (c *Config) validate() error {
 	}
 
 	if c.GroupId == `` {
-		return errors.New(`k-stream.consumer.Config`,
-			`k-stream.consumer.Config: Consumer.GroupId cannot be empty`)
+		return errors.New(`k-stream.consumer.Config: Consumer.groupId cannot be empty`)
 	}
 
 	if len(c.BootstrapServers) < 1 {
-		return errors.New(`k-stream.consumer.Config`,
-			`k-stream.consumer.Config: Consumer.BootstrapServers cannot be empty`)
+		return errors.New(`k-stream.consumer.Config: Consumer.BootstrapServers cannot be empty`)
 	}
 
 	return nil
@@ -46,5 +44,5 @@ func (c *Config) setDefaults() {
 	c.Consumer.Return.Errors = true
 	c.ChannelBufferSize = 100
 	c.MetricsReporter = metrics.NoopReporter()
-	c.Logger = log.NewPrefixedNoopLogger()
+	c.Logger = log.NewNoopLogger()
 }
