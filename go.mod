@@ -1,4 +1,4 @@
-module github.com/pickme-go/k-stream/2
+module github.com/pickme-go/k-stream/v2
 
 go 1.13
 
