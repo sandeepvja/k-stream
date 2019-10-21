@@ -1,4 +1,4 @@
-package consumer
+package data
 
 import (
 	"fmt"

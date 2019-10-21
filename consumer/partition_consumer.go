@@ -5,28 +5,29 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/google/uuid"
 	"github.com/pickme-go/errors"
-	"github.com/pickme-go/log"
-	"github.com/pickme-go/metrics"
+	"github.com/pickme-go/k-stream/data"
+	"github.com/pickme-go/k-stream/k-stream/offsets"
+	"github.com/pickme-go/log/v2"
+	"github.com/pickme-go/metrics/v2"
 	"time"
 )
 
 type PartitionConsumer interface {
 	Consume(topic string, partition int32, offset Offset) (<-chan Event, error)
 	Errors() <-chan *Error
-	GetOldestOffset(topic string, partition int32) (int64, error)
-	GetLatestOffset(topic string, partition int32) (int64, error)
 	Close() error
 	Id() string
 }
 
 type partitionConsumer struct {
-	id                string
-	client            sarama.Client
+	id string
+	//client            sarama.Client
+	offsets           offsets.Manager
 	consumerEvents    chan Event
 	consumerErrors    chan *Error
 	consumer          sarama.Consumer
 	partitionConsumer sarama.PartitionConsumer
-	logger            log.PrefixedLogger
+	logger            log.Logger
 	metrics           struct {
 		consumerBuffer    metrics.Gauge
 		consumerBufferMax metrics.Gauge
@@ -42,25 +43,31 @@ func NewPartitionConsumer(c *Config) (PartitionConsumer, error) {
 		return nil, err
 	}
 
-	client, err := sarama.NewClient(c.BootstrapServers, c.Config)
-	if err != nil {
-		return nil, errors.WithPrevious(err, `k-stream.partition-consumer`, "new client failed")
-	}
+	//client, err := sarama.NewClient(c.BootstrapServers, c.Config)
+	//if err != nil {
+	//	return nil, errors.WithPrevious(err,  "new client failed")
+	//}
 
-	consumer, err := sarama.NewConsumerFromClient(client)
+	offsetManager := offsets.NewManager(&offsets.Config{
+		Config:           c.Config,
+		BootstrapServers: c.BootstrapServers,
+		Logger:           c.Logger,
+	})
+
+	consumer, err := sarama.NewConsumer(c.BootstrapServers, c.Config)
 	if err != nil {
-		return nil, errors.WithPrevious(err, `k-stream.partition-consumer`, `new consumer failed `)
+		return nil, errors.WithPrevious(err, `new consumer failed `)
 	}
 
 	pc := &partitionConsumer{
 		id:             c.Id,
-		client:         client,
+		offsets:        offsetManager,
 		consumer:       consumer,
 		consumerEvents: make(chan Event, c.ChannelBufferSize),
 		consumerErrors: make(chan *Error, 1),
 		closed:         make(chan bool, 1),
 		closing:        make(chan bool, 1),
-		logger:         c.Logger,
+		logger:         c.Logger.NewLog(log.Prefixed(`partition-consumer`)),
 	}
 
 	labels := []string{`topic`, `partition`}
@@ -82,16 +89,14 @@ func NewPartitionConsumer(c *Config) (PartitionConsumer, error) {
 
 func (c *partitionConsumer) Consume(topic string, partition int32, offset Offset) (<-chan Event, error) {
 
-	partitionStart, err := c.client.GetOffset(topic, partition, sarama.OffsetOldest)
+	partitionStart, err := c.offsets.GetOffsetOldest(topic, partition)
 	if err != nil {
-		return nil, errors.WithPrevious(err, `k-stream.Partition-consumer`,
-			fmt.Sprintf(`cannot get oldest offset for %s[%d]`, topic, partition))
+		return nil, errors.WithPrevious(err, fmt.Sprintf(`cannot get oldest offset for %s[%d]`, topic, partition))
 	}
 
-	partitionEnd, err := c.client.GetOffset(topic, partition, sarama.OffsetNewest)
+	partitionEnd, err := c.offsets.GetOffsetLatest(topic, partition)
 	if err != nil {
-		return nil, errors.WithPrevious(err, `k-stream.Partition-consumer`,
-			fmt.Sprintf(`cannot get latest latest for %s[%d]`, topic, partition))
+		return nil, errors.WithPrevious(err, fmt.Sprintf(`cannot get latest latest for %s[%d]`, topic, partition))
 	}
 
 	// partition is empty
@@ -111,8 +116,7 @@ func (c *partitionConsumer) Consume(topic string, partition int32, offset Offset
 
 	pConsumer, err := c.consumer.ConsumePartition(topic, partition, int64(offset))
 	if err != nil {
-		return nil, errors.WithPrevious(err, c.logPrefix(),
-			fmt.Sprintf(`cannot initiate partition consumer for %s_%d`, topic, partition))
+		return nil, errors.WithPrevious(err, fmt.Sprintf(`cannot initiate partition consumer for %s_%d`, topic, partition))
 	}
 
 	c.partitionConsumer = pConsumer
@@ -126,24 +130,6 @@ func (c *partitionConsumer) Consume(topic string, partition int32, offset Offset
 	return c.consumerEvents, nil
 }
 
-func (c *partitionConsumer) GetLatestOffset(topic string, partition int32) (int64, error) {
-	offset, err := c.client.GetOffset(topic, partition, sarama.OffsetNewest)
-	if err != nil {
-		return 0, errors.WithPrevious(err, `k-stream.consumer`, `cannot fetch latest offset for partition `)
-	}
-
-	return offset, err
-}
-
-func (c *partitionConsumer) GetOldestOffset(topic string, partition int32) (int64, error) {
-	offset, err := c.client.GetOffset(topic, partition, sarama.OffsetOldest)
-	if err != nil {
-		return 0, errors.WithPrevious(err, `k-stream.consumer`, `cannot fetch oldest offset for partition `)
-	}
-
-	return offset, err
-}
-
 func (c *partitionConsumer) Errors() <-chan *Error {
 	return c.consumerErrors
 }
@@ -154,7 +140,7 @@ func (c *partitionConsumer) Id() string {
 
 func (c *partitionConsumer) consumeErrors(consumer sarama.PartitionConsumer) {
 	for err := range consumer.Errors() {
-		c.logger.Error(c.logPrefix(), fmt.Sprintf("Error: %+v", err))
+		c.logger.Error(err)
 		c.consumerErrors <- &Error{err}
 	}
 }
@@ -162,34 +148,30 @@ func (c *partitionConsumer) consumeErrors(consumer sarama.PartitionConsumer) {
 func (c *partitionConsumer) runBufferMetrics(consumer sarama.PartitionConsumer) {
 
 	ticker := time.NewTicker(1 * time.Second)
-	for true {
-		select {
-		case <-ticker.C:
+	for range ticker.C {
+		c.metrics.consumerBuffer.Count(float64(len(consumer.Messages())), map[string]string{
+			`topic`:     ``,
+			`partition`: `0`,
+			`type`:      `sarama`,
+		})
 
-			c.metrics.consumerBuffer.Count(float64(len(consumer.Messages())), map[string]string{
-				`topic`:     ``,
-				`partition`: `0`,
-				`type`:      `sarama`,
-			})
+		c.metrics.consumerBufferMax.Count(float64(cap(consumer.Messages())), map[string]string{
+			`topic`:     ``,
+			`partition`: `0`,
+			`type`:      `sarama`,
+		})
 
-			c.metrics.consumerBufferMax.Count(float64(cap(consumer.Messages())), map[string]string{
-				`topic`:     ``,
-				`partition`: `0`,
-				`type`:      `sarama`,
-			})
+		c.metrics.consumerBuffer.Count(float64(len(c.consumerEvents)), map[string]string{
+			`topic`:     ``,
+			`partition`: `0`,
+			`type`:      `k_stream`,
+		})
 
-			c.metrics.consumerBuffer.Count(float64(len(c.consumerEvents)), map[string]string{
-				`topic`:     ``,
-				`partition`: `0`,
-				`type`:      `k_stream`,
-			})
-
-			c.metrics.consumerBufferMax.Count(float64(cap(c.consumerEvents)), map[string]string{
-				`topic`:     ``,
-				`partition`: `0`,
-				`type`:      `k_stream`,
-			})
-		}
+		c.metrics.consumerBufferMax.Count(float64(cap(c.consumerEvents)), map[string]string{
+			`topic`:     ``,
+			`partition`: `0`,
+			`type`:      `k_stream`,
+		})
 	}
 }
 
@@ -203,16 +185,15 @@ MainLoop:
 				break MainLoop
 			}
 
-			latency := time.Now().Sub(msg.Timestamp).Nanoseconds() / 1e6
+			latency := time.Since(msg.Timestamp).Nanoseconds() / 1e6
 
 			c.metrics.endToEndLatency.Observe(float64(latency*1e3), map[string]string{
 				`topic`:     msg.Topic,
 				`partition`: fmt.Sprint(msg.Partition),
 			})
 
-			c.logger.Trace(c.logPrefix(),
-				fmt.Sprintf(`message [%d] received after %d miliseconds for %s[%d]`,
-					msg.Offset, latency, msg.Topic, msg.Partition))
+			c.logger.Trace(fmt.Sprintf(`message [%d] received after %d miliseconds for %s[%d]`,
+				msg.Offset, latency, msg.Topic, msg.Partition))
 
 			// TODO remove this
 			c.logger.Debug(`k-stream.Partition-consumer.Trace.Sync`,
@@ -221,11 +202,11 @@ MainLoop:
 					msg.Partition,
 					string(msg.Key),
 					string(msg.Value),
-					time.Now().Sub(msg.Timestamp).Nanoseconds()/1e6,
+					time.Since(msg.Timestamp).Nanoseconds()/1e6,
 					time.Now(),
 				))
 
-			c.consumerEvents <- &Record{
+			c.consumerEvents <- &data.Record{
 				Key:       msg.Key,
 				Value:     msg.Value,
 				Offset:    msg.Offset,
@@ -255,30 +236,26 @@ MainLoop:
 
 func (c *partitionConsumer) Close() error {
 
-	c.logger.Info(c.logPrefix(), fmt.Sprintf("[%s] closing... ", c.id))
+	c.logger.Info(fmt.Sprintf("[%s] closing... ", c.id))
 
 	c.closing <- true
 	<-c.closed
 
 	if err := c.partitionConsumer.Close(); err != nil {
-		c.logger.Error(c.logPrefix(), fmt.Sprintf("cannot close [%s] ", err))
+		c.logger.Error(fmt.Sprintf("cannot close [%s] ", err))
 	}
 
 	if err := c.consumer.Close(); err != nil {
-		c.logger.Error(c.logPrefix(), fmt.Sprintf("cannot close [%s] ", err))
+		c.logger.Error(fmt.Sprintf("cannot close [%s] ", err))
 	}
 
-	if err := c.client.Close(); err != nil {
-		c.logger.Error(c.logPrefix(), fmt.Sprintf("cannot close [%s] ", err))
+	if err := c.offsets.Close(); err != nil {
+		c.logger.Error(fmt.Sprintf("cannot close [%s] ", err))
 	}
 
 	close(c.consumerEvents)
 	close(c.consumerErrors)
 
-	c.logger.Info(c.logPrefix(), fmt.Sprintf("[%s] closed", c.id))
+	c.logger.Info(fmt.Sprintf("[%s] closed", c.id))
 	return nil
-}
-
-func (c *partitionConsumer) logPrefix() string {
-	return `k-stream.partition-consumer`
 }

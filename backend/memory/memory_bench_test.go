@@ -1,0 +1,102 @@
+/**
+ * Copyright 2018 PickMe (Digital Mobility Solutions Lanka (PVT) Ltd).
+ * All rights reserved.
+ * Authors:
+ *    Gayan Yapa (gayan@pickme.lk)
+ */
+
+package memory
+
+import (
+	"fmt"
+	"github.com/pickme-go/log/v2"
+	"github.com/pickme-go/metrics/v2"
+	"math/rand"
+	"testing"
+)
+
+func BenchmarkMemory_Set(b *testing.B) {
+	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			if err := backend.Set([]byte(`100`), []byte(`100`), 0); err != nil {
+				log.Fatal(err)
+			}
+		}
+	})
+}
+
+func BenchmarkMemory_Get(b *testing.B) {
+	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+	for i := 1; i <= 10000; i++ {
+		if err := backend.Set([]byte(fmt.Sprint(i)), []byte(`100`), 0); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			k := fmt.Sprint(rand.Intn(999) + 1)
+			//println(k)
+			if _, err := backend.Get([]byte(k)); err != nil {
+				b.Error(err)
+			}
+		}
+	})
+}
+
+func BenchmarkMemory_GetSet(b *testing.B) {
+	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+	b.ResetTimer()
+
+	for i := 1; i <= 99999; i++ {
+		if err := backend.Set([]byte(fmt.Sprint(rand.Intn(1000)+1)), []byte(`100`), 0); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	go func() {
+		for {
+			if err := backend.Set([]byte(fmt.Sprint(rand.Intn(1000)+1)), []byte(`100`), 0); err != nil {
+				b.Fatal(err)
+			}
+		}
+	}()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			if _, err := backend.Get([]byte(fmt.Sprint(rand.Intn(1000) + 1))); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+}
+
+func BenchmarkMemory_Iterator(b *testing.B) {
+	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+
+	for i := 1; i <= 999999; i++ {
+		if err := backend.Set([]byte(fmt.Sprint(rand.Intn(999999)+1)), []byte(`100`), 0); err != nil {
+			log.Fatal(err)
+		}
+	}
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			i := backend.Iterator()
+			for i.Valid() {
+
+				if i.Error() != nil {
+					i.Next()
+					continue
+				}
+
+				i.Next()
+			}
+		}
+	})
+}
