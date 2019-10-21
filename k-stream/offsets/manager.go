@@ -3,7 +3,7 @@ package offsets
 import (
 	"fmt"
 	"github.com/Shopify/sarama"
-	"github.com/pickme-go/log"
+	"github.com/pickme-go/log/v2"
 )
 
 type Manager interface {

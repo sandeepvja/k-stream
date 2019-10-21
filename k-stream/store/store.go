@@ -9,7 +9,7 @@ import (
 	"github.com/pickme-go/k-stream/k-stream/changelog"
 	kContext "github.com/pickme-go/k-stream/k-stream/context"
 	"github.com/pickme-go/k-stream/k-stream/encoding"
-	"github.com/pickme-go/log"
+	"github.com/pickme-go/log/v2"
 	"time"
 )
 

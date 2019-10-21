@@ -12,7 +12,7 @@ import (
 	"github.com/pickme-go/k-stream/k-stream/internal/join"
 	"github.com/pickme-go/k-stream/k-stream/processors"
 	"github.com/pickme-go/k-stream/k-stream/store"
-	"github.com/pickme-go/log"
+	"github.com/pickme-go/log/v2"
 )
 
 type GlobalTableOffset int

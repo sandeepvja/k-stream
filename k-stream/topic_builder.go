@@ -3,7 +3,7 @@ package kstream
 import (
 	"fmt"
 	"github.com/pickme-go/k-stream/admin"
-	"github.com/pickme-go/log"
+	"github.com/pickme-go/log/v2"
 )
 
 type topicBuilder struct {

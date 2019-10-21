@@ -16,8 +16,8 @@ import (
 	"github.com/pickme-go/k-stream/consumer"
 	"github.com/pickme-go/k-stream/k-stream/task_pool"
 	"github.com/pickme-go/k-stream/producer"
-	"github.com/pickme-go/log"
-	"github.com/pickme-go/metrics"
+	"github.com/pickme-go/log/v2"
+	"github.com/pickme-go/metrics/v2"
 	"strings"
 	"time"
 )

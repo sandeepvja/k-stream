@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/pickme-go/k-stream/k-stream/internal/node"
-	"github.com/pickme-go/metrics"
+	"github.com/pickme-go/metrics/v2"
 	"math/rand"
 	"testing"
 )

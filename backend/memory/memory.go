@@ -9,8 +9,8 @@ package memory
 
 import (
 	"github.com/pickme-go/k-stream/backend"
-	"github.com/pickme-go/log"
-	"github.com/pickme-go/metrics"
+	"github.com/pickme-go/log/v2"
+	"github.com/pickme-go/metrics/v2"
 	"sync"
 	"time"
 )

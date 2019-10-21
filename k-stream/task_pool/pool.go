@@ -3,8 +3,8 @@ package task_pool
 import (
 	"context"
 	"github.com/pickme-go/k-stream/k-stream/internal/node"
-	"github.com/pickme-go/log"
-	"github.com/pickme-go/metrics"
+	"github.com/pickme-go/log/v2"
+	"github.com/pickme-go/metrics/v2"
 	"hash"
 	"hash/fnv"
 	"math/rand"

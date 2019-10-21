@@ -5,7 +5,7 @@ import (
 	"github.com/pickme-go/k-stream/backend"
 	"github.com/pickme-go/k-stream/consumer"
 	"github.com/pickme-go/k-stream/k-stream/offsets"
-	"github.com/pickme-go/log"
+	"github.com/pickme-go/log/v2"
 	"sync"
 )
 

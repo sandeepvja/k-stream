@@ -3,8 +3,8 @@ package consumer
 import (
 	"github.com/Shopify/sarama"
 	"github.com/pickme-go/errors"
-	"github.com/pickme-go/log"
-	"github.com/pickme-go/metrics"
+	"github.com/pickme-go/log/v2"
+	"github.com/pickme-go/metrics/v2"
 )
 
 type Config struct {

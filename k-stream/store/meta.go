@@ -3,7 +3,7 @@ package store
 import (
 	"fmt"
 	"github.com/Shopify/sarama"
-	"github.com/pickme-go/log"
+	"github.com/pickme-go/log/v2"
 	"time"
 )
 

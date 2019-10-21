@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"github.com/pickme-go/log"
+	"github.com/pickme-go/log/v2"
 	"net/http"
 	"strconv"
 )

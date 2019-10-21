@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/k-stream/changelog"
-	"github.com/pickme-go/log"
+	"github.com/pickme-go/log/v2"
 )
 
 type RecoverableStore interface {

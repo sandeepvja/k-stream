@@ -17,8 +17,8 @@ import (
 	kContext "github.com/pickme-go/k-stream/k-stream/context"
 	"github.com/pickme-go/k-stream/k-stream/internal/node"
 	"github.com/pickme-go/k-stream/k-stream/task_pool"
-	"github.com/pickme-go/log"
-	"github.com/pickme-go/metrics"
+	"github.com/pickme-go/log/v2"
+	"github.com/pickme-go/metrics/v2"
 	"github.com/pickme-go/traceable-context"
 	"time"
 )

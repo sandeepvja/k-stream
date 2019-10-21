@@ -5,7 +5,7 @@ import (
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/consumer"
 	"github.com/pickme-go/k-stream/data"
-	"github.com/pickme-go/log"
+	"github.com/pickme-go/log/v2"
 )
 
 type replicaSyncer struct {
