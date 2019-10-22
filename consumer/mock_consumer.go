@@ -58,7 +58,7 @@ func NewMockConsumer(topics *admin.Topics) Consumer {
 	return &mockConsumer{
 		topics:         topics,
 		fetchInterval:  1 * time.Millisecond,
-		fetchBatchSize: 5,
+		fetchBatchSize: 50,
 		wg:             new(sync.WaitGroup),
 	}
 }
