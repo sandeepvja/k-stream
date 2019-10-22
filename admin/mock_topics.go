@@ -2,7 +2,7 @@ package admin
 
 import (
 	"errors"
-	"fmt"
+	"github.com/Shopify/sarama"
 	"github.com/pickme-go/k-stream/data"
 	"sync"
 )
@@ -151,7 +151,7 @@ func (td *Topics) Topic(name string) (*MockTopic, error) {
 
 	t, ok := td.topics[name]
 	if !ok {
-		return t, fmt.Errorf(`topic does not exists "%v"`, name)
+		return t, sarama.ErrUnknownTopicOrPartition
 	}
 
 	return t, nil

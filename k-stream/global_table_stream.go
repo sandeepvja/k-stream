@@ -154,8 +154,8 @@ func (t *tableInstance) start() error {
 			}
 
 		case *consumer.PartitionEnd:
-			t.logger.Info(`partition ended`)
 			if !synced {
+				t.logger.Info(`partition ended`)
 				ticker.Stop()
 				synced = true
 				t.synced <- true

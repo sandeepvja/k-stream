@@ -16,7 +16,7 @@ func (m *MockKafkaAdmin) FetchInfo(topics []string) (map[string]*Topic, error) {
 	for _, topic := range topics {
 		info, err := m.Topics.Topic(topic)
 		if err != nil {
-			return nil, err
+			info.Meta.Error = err
 		}
 		tps[topic] = info.Meta
 	}

@@ -49,11 +49,12 @@ func (m *mockPartitionConsumer) consume(topic string, partition int32, offset Of
 			log.Fatal(err)
 		}
 
-		currentOffset = off + 1
-
 		if len(records) < 1 {
+			m.events <- &PartitionEnd{}
 			continue
 		}
+
+		currentOffset = off + 1
 
 		partitionEnd, err := m.offsets.GetOffsetLatest(topic, partition)
 		if err != nil {
