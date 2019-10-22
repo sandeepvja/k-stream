@@ -68,7 +68,11 @@ func (m *mockConsumer) Consume(topics []string, handler ReBalanceHandler) (chan 
 	var assigned []TopicPartition
 
 	for _, topic := range topics {
-		for p := range m.topics.Topics()[topic].Partitions() {
+		tp, err := m.topics.Topic(topic)
+		if err != nil {
+			return nil, err
+		}
+		for p := range tp.Partitions() {
 			tp := TopicPartition{
 				Topic:     topic,
 				Partition: int32(p),
