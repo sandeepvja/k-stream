@@ -3,7 +3,7 @@ module github.com/pickme-go/k-stream
 go 1.13
 
 require (
-	github.com/Shopify/sarama v1.24.0
+	github.com/Shopify/sarama v1.24.1
 	github.com/awalterschulze/gographviz v0.0.0-20190522210029-fa59802746ab
 	github.com/facebookgo/ensure v0.0.0-20160127193407-b4ab57deab51 // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
