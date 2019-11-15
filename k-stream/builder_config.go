@@ -73,7 +73,7 @@ var logger log.Logger = log.NewLog(log.WithColors(true), log.WithFilePath(true),
 
 func NewStreamBuilderConfig() *StreamBuilderConfig {
 	config := &StreamBuilderConfig{}
-	config.Producer = new(producer.Config)
+	config.Producer = producer.NewConfig()
 	config.Consumer = consumer.NewConsumerConfig()
 	config.Config = sarama.NewConfig()
 
