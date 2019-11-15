@@ -16,7 +16,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.1
 	github.com/pickme-go/errors v2.0.0+incompatible
 	github.com/pickme-go/log/v2 v2.0.1
-	github.com/pickme-go/metrics/v2 v2.0.0
+	github.com/pickme-go/metrics/v2 v2.0.1
 	github.com/pickme-go/traceable-context v1.0.0
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
 	github.com/tecbot/gorocksdb v0.0.0-20191019123150-400c56251341
