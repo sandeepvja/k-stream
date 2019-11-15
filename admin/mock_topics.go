@@ -47,8 +47,13 @@ func (p *MockPartition) Fetch(start int64, limit int) (records []*data.Record, o
 
 	offset = start
 
+	if len(p.records) == 0 {
+		return
+	}
+
 	if start > int64(len(p.records)-1) {
 		return
+		//return nil, 0, sarama.ErrOffsetOutOfRange
 	}
 
 	chunk := p.records[start:]

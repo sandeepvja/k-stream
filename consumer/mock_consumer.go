@@ -115,6 +115,7 @@ func (m *mockConsumer) consume(partition *mockConsumerPartition) {
 	var offset int64
 	for !m.closing {
 
+		//time.Sleep(2 * time.Second)
 		time.Sleep(m.fetchInterval)
 
 		records, off, err := pt.Fetch(offset, m.fetchBatchSize)
@@ -122,11 +123,11 @@ func (m *mockConsumer) consume(partition *mockConsumerPartition) {
 			log.Fatal(err)
 		}
 
-		offset = off + 1
-
 		if len(records) < 1 {
 			continue
 		}
+
+		offset = off + 1
 
 		for _, msg := range records {
 			partition.records <- &data.Record{
