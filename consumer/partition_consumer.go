@@ -43,11 +43,6 @@ func NewPartitionConsumer(c *Config) (PartitionConsumer, error) {
 		return nil, err
 	}
 
-	//client, err := sarama.NewClient(c.BootstrapServers, c.Config)
-	//if err != nil {
-	//	return nil, errors.WithPrevious(err,  "new client failed")
-	//}
-
 	offsetManager := offsets.NewManager(&offsets.Config{
 		Config:           c.Config,
 		BootstrapServers: c.BootstrapServers,

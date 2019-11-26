@@ -4,10 +4,12 @@ import "testing"
 
 func TestKafkaAdmin_FetchInfo(t *testing.T) {
 	topic := `test`
-	admin := NewMockTopics(map[string]int32{
-		topic: 2,
-	})
-
+	admin := NewMockAdminWithTopics(map[string]*Topic{
+		topic: {
+			Name:          "",
+			Partitions:    nil,
+			NumPartitions: 2,
+		}})
 	tps, err := admin.FetchInfo([]string{topic})
 	if err != nil {
 		t.Error(err)
@@ -20,9 +22,9 @@ func TestKafkaAdmin_FetchInfo(t *testing.T) {
 
 func TestKafkaAdmin_CreateTopics(t *testing.T) {
 	topic := `test`
-	admin := NewMockKafkaAdmin(nil)
+	admin := &MockKafkaAdmin{NewMockTopics()}
 
-	err := admin.CreateTopics(map[string]Topic{
+	err := admin.CreateTopics(map[string]*Topic{
 		topic: {
 			NumPartitions:     5,
 			ReplicationFactor: 2,

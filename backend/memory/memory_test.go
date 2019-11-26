@@ -54,3 +54,25 @@ func TestMemory_Get(t *testing.T) {
 	}
 
 }
+
+func TestMemory_Delete(t *testing.T) {
+	backend := NewMemoryBackend(log.Constructor.Log(), metrics.NoopReporter())
+
+	if err := backend.Set([]byte(`100`), []byte(`100`), 0); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := backend.Delete([]byte(`100`)); err != nil {
+		t.Fatal(err)
+	}
+
+	val, err := backend.Get([]byte(`100`))
+	if err != nil {
+		t.Error(err)
+	}
+
+	if val != nil {
+		t.Fail()
+	}
+
+}

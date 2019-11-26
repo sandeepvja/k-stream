@@ -25,16 +25,6 @@ import (
 	"strings"
 )
 
-//type defaultBuilders struct {
-//	producer          producer.Builder
-//	changelog         changelog.Builder
-//	consumer          consumer.Builder
-//	partitionConsumer consumer.PartitionConsumerBuilder
-//	store             store.Builder
-//	backend           backend.Builder
-//	stateStore        store.StateStoreBuilder
-//}
-
 type StreamBuilder struct {
 	config                  *StreamBuilderConfig
 	streams                 map[string]*kStream      // map[topic]topology
@@ -351,6 +341,10 @@ func (b *StreamBuilder) createChangelogTopics() error {
 			changelogReplicated: tableConfig.store.changelog.replicated,
 		}
 	}*/
+
+	if len(topics) < 1 {
+		return nil
+	}
 
 	// fetch topic info
 	info, err := b.kafkaAdmin.FetchInfo(topics)

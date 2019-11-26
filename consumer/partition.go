@@ -6,7 +6,6 @@ import (
 )
 
 type Partition interface {
-	Wait() chan<- bool
 	Records() <-chan *data.Record
 	Partition() TopicPartition
 	MarkOffset(offset int64)
@@ -26,10 +25,6 @@ func newPartition(tp TopicPartition) *partition {
 		records:   make(chan *data.Record, 1),
 		partition: tp,
 	}
-}
-
-func (p *partition) Wait() chan<- bool {
-	return p.wait
 }
 
 func (p *partition) Records() <-chan *data.Record {

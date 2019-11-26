@@ -11,6 +11,13 @@ type MockKafkaAdmin struct {
 	Topics *Topics
 }
 
+func NewMockAdminWithTopics(tps map[string]*Topic) *MockKafkaAdmin {
+	topics := NewMockTopics()
+	admin := &MockKafkaAdmin{Topics: topics}
+	admin.CreateTopics(tps)
+	return admin
+}
+
 func (m *MockKafkaAdmin) FetchInfo(topics []string) (map[string]*Topic, error) {
 	tps := make(map[string]*Topic)
 	for _, topic := range topics {
@@ -38,11 +45,6 @@ func (m *MockKafkaAdmin) createTopic(name string, info *Topic) error {
 		Name: name,
 		Meta: info,
 	}
-	//for p := range topic.Partitions() {
-	//	if err := topic.AddPartition(p); err != nil {
-	//		return err
-	//	}
-	//}
 
 	err := m.Topics.AddTopic(topic)
 	if err != nil {
