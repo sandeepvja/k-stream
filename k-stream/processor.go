@@ -73,6 +73,7 @@ func (p *processor) boot() error {
 		p.topicPartition.String(),
 		p.topologyBuilder,
 		p.metricsReporter,
+		p.logger,
 		p.taskPoolConfig)
 
 	if p.changelogEnabled {

@@ -43,7 +43,6 @@ type task struct {
 type PoolConfig struct {
 	NumOfWorkers     int
 	WorkerBufferSize int
-	Logger           log.Logger
 	Order            ExecutionOrder
 }
 
@@ -58,14 +57,14 @@ type Pool struct {
 	hasher   hash.Hash32
 }
 
-func NewPool(id string, t *node.TopologyBuilder, metricsReporter metrics.Reporter, config *PoolConfig) *Pool {
+func NewPool(id string, t *node.TopologyBuilder, metricsReporter metrics.Reporter, logger log.Logger, config *PoolConfig) *Pool {
 
 	p := &Pool{
 		id:       id,
 		topology: t,
 		size:     int64(config.NumOfWorkers),
 		order:    config.Order,
-		logger:   config.Logger,
+		logger:   logger.NewLog(log.Prefixed(`pool`)),
 		workers:  make([]*worker, config.NumOfWorkers),
 		hasher:   fnv.New32a(),
 		stopped:  make(chan bool, 1),
@@ -86,6 +85,7 @@ func NewPool(id string, t *node.TopologyBuilder, metricsReporter metrics.Reporte
 		w := &worker{
 			topology:    topology,
 			pool:        p,
+			logger:      p.logger,
 			tasks:       make(chan task, config.WorkerBufferSize),
 			bufferUsage: bufferUsage,
 		}
