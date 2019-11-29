@@ -12,6 +12,11 @@ import (
 
 func Init() {
 
+	log.StdLogger = log.Constructor.Log(
+		log.WithLevel(`TRACE`),
+		log.WithColors(true),
+	)
+
 	Logger := log.NewLog(
 		log.WithLevel(`INFO`),
 		log.WithColors(true),
@@ -77,27 +82,27 @@ func Init() {
 
 }
 
-func InitStreams(builder *kstream.StreamBuilder) []kstream.Stream{
+func InitStreams(builder *kstream.StreamBuilder) []kstream.Stream {
 
 	transactionStream := initTransactionStream(builder)
 	accountDetailTable := initAccountDetailTable(builder)
 	customerProfileTable := initCustomerProfileTable(builder)
 
 	accountCredited := AccountCredited{
-		Upstream:transactionStream,
-		AccountDetailTable:accountDetailTable,
-		CustomerProfileTable:customerProfileTable,
-		KeyEncoder:encoders.KeyEncoder,
-		MessageEncoder:encoders.MessageEncoder,
+		Upstream:             transactionStream,
+		AccountDetailTable:   accountDetailTable,
+		CustomerProfileTable: customerProfileTable,
+		KeyEncoder:           encoders.KeyEncoder,
+		MessageEncoder:       encoders.MessageEncoder,
 	}
 	accountCredited.Init()
 
 	accountDebited := AccountDebited{
-		Upstream:transactionStream,
-		AccountDetailTable:accountDetailTable,
-		CustomerProfileTable:customerProfileTable,
-		KeyEncoder:encoders.KeyEncoder,
-		MessageEncoder:encoders.MessageEncoder,
+		Upstream:             transactionStream,
+		AccountDetailTable:   accountDetailTable,
+		CustomerProfileTable: customerProfileTable,
+		KeyEncoder:           encoders.KeyEncoder,
+		MessageEncoder:       encoders.MessageEncoder,
 	}
 	accountDebited.Init()
 

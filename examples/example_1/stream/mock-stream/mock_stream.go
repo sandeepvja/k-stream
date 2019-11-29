@@ -141,56 +141,56 @@ func main() {
 	//produceRealData()
 }
 
-func produceAccountCredited(streamProducer producer.Producer){
+func produceAccountCredited(streamProducer producer.Producer) {
 
 	for {
 		key := rand.Int63n(100)
 		event := events.AccountCredited{
-			ID:uuid.New().String(),
-			Type:`account_credited`,
-			Timestamp:time.Now().Unix(),
+			ID:        uuid.New().String(),
+			Type:      `account_credited`,
+			Timestamp: time.Now().UnixNano() / 1e6,
 		}
 		event.Body.AccountNo = key
 		event.Body.TransactionId = rand.Int63n(10000)
 		event.Body.Amount = 1000.00
 		event.Body.Reason = `utility bill transfer`
 		event.Body.DebitedFrom = 1111
-		event.Body.CreditedAt = time.Now().UnixNano()/1e6
+		event.Body.CreditedAt = time.Now().UnixNano() / 1e6
 		event.Body.Location = `Main Branch, City A`
 
-		encodedKey,err := encoders.KeyEncoder().Encode(key)
+		encodedKey, err := encoders.KeyEncoder().Encode(key)
 		if err != nil {
 			log.Error(err, event)
 		}
-		encodedVal,err := encoders.AccountCreditedEncoder().Encode(event)
+		encodedVal, err := encoders.AccountCreditedEncoder().Encode(event)
 		if err != nil {
 			log.Error(err, event)
 		}
 
-		_,_, err = streamProducer.Produce(context.Background(), &data.Record{
-			Key:encodedKey,
-			Value:encodedVal,
-			Topic:`transaction`,
-			Timestamp:time.Now(),
+		_, _, err = streamProducer.Produce(context.Background(), &data.Record{
+			Key:       encodedKey,
+			Value:     encodedVal,
+			Topic:     `transaction`,
+			Timestamp: time.Now(),
 		})
 
 		if err != nil {
 			log.Error(err)
 		}
 
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond * 500)
 	}
 
 }
 
-func produceAccountDebited(streamProducer producer.Producer){
+func produceAccountDebited(streamProducer producer.Producer) {
 
 	for {
 		key := rand.Int63n(100)
 		event := events.AccountDebited{
-			ID:uuid.New().String(),
-			Type:`account_debited`,
-			Timestamp:time.Now().UnixNano()/1e6,
+			ID:        uuid.New().String(),
+			Type:      `account_debited`,
+			Timestamp: time.Now().UnixNano() / 1e6,
 		}
 		event.Body.AccountNo = key
 		event.Body.TransactionId = rand.Int63n(10000)
@@ -200,37 +200,37 @@ func produceAccountDebited(streamProducer producer.Producer){
 		event.Body.DebitedAt = time.Now().Unix()
 		event.Body.Location = `Main Branch, City A`
 
-		encodedKey,err := encoders.KeyEncoder().Encode(key)
+		encodedKey, err := encoders.KeyEncoder().Encode(key)
 		if err != nil {
 			log.Error(err, event)
 		}
-		encodedVal,err := encoders.AccountDebitedEncoder().Encode(event)
+		encodedVal, err := encoders.AccountDebitedEncoder().Encode(event)
 		if err != nil {
 			log.Error(err, event)
 		}
 
-		_,_, err = streamProducer.Produce(context.Background(), &data.Record{
-			Key:encodedKey,
-			Value:encodedVal,
-			Topic:`transaction`,
-			Timestamp:time.Now(),
+		_, _, err = streamProducer.Produce(context.Background(), &data.Record{
+			Key:       encodedKey,
+			Value:     encodedVal,
+			Topic:     `transaction`,
+			Timestamp: time.Now(),
 		})
 
 		if err != nil {
 			log.Error(err)
 		}
 
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Millisecond * 500)
 	}
 }
 
-func produceAccountDetails(streamProducer producer.Producer){
-	for i :=1; i <= 100; i++{
+func produceAccountDetails(streamProducer producer.Producer) {
+	for i := 1; i <= 100; i++ {
 		key := int64(i)
 		event := events.AccountDetailsUpdated{
-			ID:uuid.New().String(),
-			Type:`account_details_updated`,
-			Timestamp:time.Now().UnixNano()/1e6,
+			ID:        uuid.New().String(),
+			Type:      `account_details_updated`,
+			Timestamp: time.Now().UnixNano() / 1e6,
 		}
 		event.Body.AccountNo = key
 		event.Body.AccountType = `Saving`
@@ -239,21 +239,20 @@ func produceAccountDetails(streamProducer producer.Producer){
 		event.Body.BranchCode = 1
 		event.Body.UpdatedAt = time.Now().Unix()
 
-
-		encodedKey,err := encoders.KeyEncoder().Encode(key)
+		encodedKey, err := encoders.KeyEncoder().Encode(key)
 		if err != nil {
 			log.Error(err, event)
 		}
-		encodedVal,err := encoders.AccountDetailsUpdatedEncoder().Encode(event)
+		encodedVal, err := encoders.AccountDetailsUpdatedEncoder().Encode(event)
 		if err != nil {
 			log.Error(err, event)
 		}
 
-		_,_, err = streamProducer.Produce(context.Background(), &data.Record{
-			Key:encodedKey,
-			Value:encodedVal,
-			Topic:`account_detail`,
-			Timestamp:time.Now(),
+		_, _, err = streamProducer.Produce(context.Background(), &data.Record{
+			Key:       encodedKey,
+			Value:     encodedVal,
+			Topic:     `account_detail`,
+			Timestamp: time.Now(),
 		})
 
 		if err != nil {
@@ -264,14 +263,14 @@ func produceAccountDetails(streamProducer producer.Producer){
 	}
 }
 
-func produceCustomerProfile(streamProducer producer.Producer){
+func produceCustomerProfile(streamProducer producer.Producer) {
 
-	for i :=1; i <= 100; i++{
+	for i := 1; i <= 100; i++ {
 		key := int64(i)
 		event := events.CustomerProfileUpdated{
-			ID:uuid.New().String(),
-			Type:`customer_profile_updated`,
-			Timestamp:time.Now().UnixNano()/1e6,
+			ID:        uuid.New().String(),
+			Type:      `customer_profile_updated`,
+			Timestamp: time.Now().UnixNano() / 1e6,
 		}
 		event.Body.CustomerID = key
 		event.Body.CustomerName = `Rob Pike`
@@ -282,20 +281,20 @@ func produceCustomerProfile(streamProducer producer.Producer){
 		event.Body.DateOfBirth = `16th-Nov-2019`
 		event.Body.UpdatedAt = time.Now().Unix()
 
-		encodedKey,err := encoders.KeyEncoder().Encode(key)
+		encodedKey, err := encoders.KeyEncoder().Encode(key)
 		if err != nil {
 			log.Error(err, event)
 		}
-		encodedVal,err := encoders.CustomerProfileUpdatedEncoder().Encode(event)
+		encodedVal, err := encoders.CustomerProfileUpdatedEncoder().Encode(event)
 		if err != nil {
 			log.Error(err, event)
 		}
 
-		_,_, err = streamProducer.Produce(context.Background(), &data.Record{
-			Key:encodedKey,
-			Value:encodedVal,
-			Topic:`customer_profile`,
-			Timestamp:time.Now(),
+		_, _, err = streamProducer.Produce(context.Background(), &data.Record{
+			Key:       encodedKey,
+			Value:     encodedVal,
+			Topic:     `customer_profile`,
+			Timestamp: time.Now(),
 		})
 
 		if err != nil {
@@ -306,34 +305,31 @@ func produceCustomerProfile(streamProducer producer.Producer){
 	}
 }
 
-
-func consumeMessageAndPrint(topics *admin.Topics){
+func consumeMessageAndPrint(topics *admin.Topics) {
 	mockConsumer := consumer.NewMockConsumer(topics)
-	partitions, err := mockConsumer.Consume([]string{`message`},rebalanceHandler{})
+	partitions, err := mockConsumer.Consume([]string{`message`}, rebalanceHandler{})
 	if err != nil {
 		log.Fatal(`consumer error `, err)
 	}
 
 	for p := range partitions {
 		go func(pt consumer.Partition) {
-			for record := range pt.Records(){
-					log.Debug(fmt.Sprintf(`message was received to partition %v with offset %v `, record.Partition, record.Offset))
-					m, err := encoders.MessageEncoder().Decode(record.Value)
-					if err != nil {
-						log.Error(err)
-					}
+			for record := range pt.Records() {
+				log.Debug(fmt.Sprintf(`message was received to partition %v with offset %v `, record.Partition, record.Offset))
+				m, err := encoders.MessageEncoder().Decode(record.Value)
+				if err != nil {
+					log.Error(err)
+				}
 
-					message, _ := m.(events.MessageCreated)
-					fmt.Println(fmt.Sprintf(`received text message := %s`, message.Body.Text))
-					log.Info(fmt.Sprintf(`received text message := %s`, message.Body.Text))
+				message, _ := m.(events.MessageCreated)
+				fmt.Println(fmt.Sprintf(`received text message := %s`, message.Body.Text))
+				log.Info(fmt.Sprintf(`received text message := %s`, message.Body.Text))
 			}
 		}(p)
 	}
 }
 
-
 type rebalanceHandler struct {
-
 }
 
 func (r rebalanceHandler) OnPartitionRevoked(ctx context.Context, revoked []consumer.TopicPartition) error {
@@ -344,7 +340,7 @@ func (r rebalanceHandler) OnPartitionAssigned(ctx context.Context, assigned []co
 	return nil
 }
 
-func produceRealData(){
+func produceRealData() {
 	config := producer.NewConfig()
 	config.Logger = log.NewLog(
 		log.WithLevel(`INFO`),
@@ -361,5 +357,5 @@ func produceRealData(){
 	produceAccountDetails(pro)
 	produceCustomerProfile(pro)
 	go produceAccountCredited(pro)
-	 produceAccountDebited(pro)
+	produceAccountDebited(pro)
 }

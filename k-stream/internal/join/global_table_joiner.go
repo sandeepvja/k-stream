@@ -43,6 +43,13 @@ func (j *GlobalTableJoiner) Next() bool {
 
 func (j *GlobalTableJoiner) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut interface{}, next bool, err error) {
 	v, err := j.Join(ctx, kIn, vIn)
+
+	for _, child := range j.childs {
+		_, _, next, err := child.Run(ctx, kIn, v)
+		if err != nil || !next {
+			return nil, nil, false, err
+		}
+	}
 	return kIn, v, true, err
 }
 
@@ -56,7 +63,28 @@ func (j *GlobalTableJoiner) Build() (node.Node, error) { //TODO: write new build
 		return nil, errors.New(`store [` + j.Store + `] dose not exist`)
 	}
 
-	return j, nil
+	var childs []node.Node
+	//var childBuilders []node.NodeBuilder
+
+	for _, childBuilder := range j.childBuilders {
+		child, err := childBuilder.Build()
+		if err != nil {
+			return nil, err
+		}
+
+		childs = append(childs, child)
+	}
+
+	return &GlobalTableJoiner{
+		Id:            j.Id,
+		Typ:           j.Typ,
+		Store:         j.Store,
+		KeyMapper:     j.KeyMapper,
+		ValueMapper:  j.ValueMapper,
+		store:         j.store,
+		Registry:      j.Registry,
+		childs:        childs,
+	}, nil
 }
 
 func (j *GlobalTableJoiner) Join(ctx context.Context, key interface{}, leftVal interface{}) (joinedVal interface{}, err error) {

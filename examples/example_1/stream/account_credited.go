@@ -12,14 +12,14 @@ import (
 )
 
 type AccountCredited struct {
-	Upstream           kstream.Stream
-	AccountDetailTable kstream.GlobalTable
+	Upstream             kstream.Stream
+	AccountDetailTable   kstream.GlobalTable
 	CustomerProfileTable kstream.GlobalTable
 	KeyEncoder           func() encoding.Encoder
-	MessageEncoder    func() encoding.Encoder
+	MessageEncoder       func() encoding.Encoder
 }
 
-func (ac AccountCredited) Init(){
+func (ac AccountCredited) Init() {
 	accountCreditedBranches := ac.Upstream.Branch([]branch.Details{{Name: `account_credited`, Predicate: func(ctx context.Context, key interface{}, val interface{}) (b bool, e error) {
 		_, ok := val.(events.AccountCredited)
 		return ok, nil
@@ -62,9 +62,9 @@ func (ac AccountCredited) accountCreditedAccountDetailsMapping(left interface{},
 	text := fmt.Sprintf(`Your a/c %d is credited with %v USD on %v at %v`, l.Body.AccountNo, l.Body.Amount, dateTime, l.Body.Location)
 
 	message := events.MessageCreated{
-		ID:   uuid.New().String(),
-		Type: "message_created",
-		Timestamp: time.Now().UnixNano()/1e6,
+		ID:        uuid.New().String(),
+		Type:      "message_created",
+		Timestamp: time.Now().UnixNano() / 1e6,
 	}
 
 	message.Body.CustomerID = r.Body.CustomerID
