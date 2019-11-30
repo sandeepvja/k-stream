@@ -315,7 +315,7 @@ func consumeMessageAndPrint(topics *admin.Topics) {
 	for p := range partitions {
 		go func(pt consumer.Partition) {
 			for record := range pt.Records() {
-				log.Debug(fmt.Sprintf(`message was received to partition %v with offset %v `, record.Partition, record.Offset))
+				log.Debug(fmt.Sprintf(`message was received to partition %v with offset %v and key %v`, record.Partition, record.Offset, string(record.Key)))
 				m, err := encoders.MessageEncoder().Decode(record.Value)
 				if err != nil {
 					log.Error(err)

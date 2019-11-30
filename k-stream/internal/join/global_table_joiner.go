@@ -43,6 +43,9 @@ func (j *GlobalTableJoiner) Next() bool {
 
 func (j *GlobalTableJoiner) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut interface{}, next bool, err error) {
 	v, err := j.Join(ctx, kIn, vIn)
+	if err != nil {
+		return nil, nil, false, errors.WithPrevious(err, `join error`)
+	}
 
 	for _, child := range j.childs {
 		_, _, next, err := child.Run(ctx, kIn, v)

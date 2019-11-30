@@ -73,7 +73,7 @@ func (f *Filter) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inte
 
 	ok, err := f.FilterFunc(ctx, kIn, vIn)
 	if err != nil {
-		return nil, nil, false, errors.WithPrevious(err, `process error`)
+		return nil, nil, false, errors.WithPrevious(err, `filter error`)
 	}
 
 	if ok {
