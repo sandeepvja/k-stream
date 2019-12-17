@@ -170,6 +170,7 @@ func (b *StreamBuilder) GlobalTable(topic string, keyEncoder encoding.Builder, v
 	//apply options
 	opts := new(globalTableOptions)
 	opts.initialOffset = GlobalTableOffsetDefault
+	opts.storeWriter = globalTableStoreWriter
 	for _, o := range options {
 		o(opts)
 	}

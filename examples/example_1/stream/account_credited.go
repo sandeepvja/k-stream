@@ -20,10 +20,14 @@ type AccountCredited struct {
 }
 
 func (ac AccountCredited) Init() {
-	accountCreditedBranches := ac.Upstream.Branch([]branch.Details{{Name: `account_credited`, Predicate: func(ctx context.Context, key interface{}, val interface{}) (b bool, e error) {
-		_, ok := val.(events.AccountCredited)
-		return ok, nil
-	}}})
+	accountCreditedBranches := ac.Upstream.Branch([]branch.Details{
+		{
+			Name: `account_credited`,
+			Predicate: func(ctx context.Context, key interface{}, val interface{}) (b bool, e error) {
+				_, ok := val.(events.AccountCredited)
+				return ok, nil
+			},
+		}})
 
 	accountCreditedBranch := accountCreditedBranches[0]
 
@@ -46,7 +50,7 @@ func (ac AccountCredited) filterFromTimestamp(ctx context.Context, key, value in
 	return true, nil
 }
 
-func (ac AccountCredited) accountCreditedAccountDetailsKeyMapping(key interface{}, value interface{}) (mappedKey interface{}, err error) {
+func (ac AccountCredited) accountCreditedAccountDetailsKeyMapping(_, value interface{}) (interface{}, error) {
 
 	accCredited, _ := value.(events.AccountCredited)
 

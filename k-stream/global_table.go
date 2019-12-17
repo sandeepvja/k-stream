@@ -8,6 +8,7 @@
 package kstream
 
 import (
+	"github.com/pickme-go/k-stream/data"
 	"github.com/pickme-go/k-stream/k-stream/encoding"
 	"github.com/pickme-go/k-stream/k-stream/internal/join"
 	"github.com/pickme-go/k-stream/k-stream/processors"
@@ -20,6 +21,16 @@ type GlobalTableOffset int
 // table will start syncing from locally stored offset or topic oldest offset
 const GlobalTableOffsetDefault GlobalTableOffset = 0
 
+var globalTableStoreWriter = func(r *data.Record, store store.Store) error {
+	if r.Value == nil {
+		if err := store.Backend().Delete(r.Key); err != nil {
+			return err
+		}
+	}
+
+	return store.Backend().Set(r.Key, r.Value, 0)
+}
+
 // table will start syncing from topic latest offset (suitable for stream topics since the topic can contains historical
 // data )
 const GlobalTableOffsetLatest GlobalTableOffset = -1
@@ -27,6 +38,7 @@ const GlobalTableOffsetLatest GlobalTableOffset = -1
 type globalTableOptions struct {
 	initialOffset GlobalTableOffset
 	logger        log.Logger
+	storeWriter   StoreWriter
 }
 
 type globalTableOption func(options *globalTableOptions)
@@ -43,6 +55,12 @@ func GlobalTableWithLogger(logger log.Logger) globalTableOption {
 	}
 }
 
+func GlobalTableWithBackendWriter(writer StoreWriter) globalTableOption {
+	return func(options *globalTableOptions) {
+		options.storeWriter = writer
+	}
+}
+
 type GlobalTable interface {
 	Stream
 }
@@ -54,37 +72,6 @@ type globalKTable struct {
 	store     store.Store
 	options   *globalTableOptions
 }
-
-//func NewGlobalKTable(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, store string, options ...globalTableOption) GlobalTable {
-//
-//	//apply options
-//	opts := new(globalTableOptions)
-//	opts.initialOffset = GlobalTableOffsetDefault
-//	for _, o := range options {
-//		o(opts)
-//	}
-//
-//	if keyEncoder == nil {
-//		opts.logger.Fatal(`k-stream.globalKTable`, `keyEncoder cannot be null`)
-//	}
-//
-//	if valEncoder == nil {
-//		opts.logger.Fatal(`k-stream.globalKTable`, `valEncode cannot be null`)
-//	}
-//
-//
-//
-//	s := NewKStream(topic, keyEncoder, valEncoder)
-//	kStream, _ := s.(*kStream)
-//	stream := &globalKTable{
-//		kStream:   kStream,
-//		storeName: store,
-//		options:   opts,
-//		logger:opts.logger,
-//	}
-//
-//	return stream
-//}
 
 func (t *globalKTable) To(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption) {
 	t.logger.Fatal(`k-stream.globalKTable`, `global table dose not support stream processing`)

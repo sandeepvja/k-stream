@@ -29,6 +29,8 @@ import (
 
 var offsetBackendName = `__k-table-offsets`
 
+type StoreWriter func(r *data.Record, store store.Store) error
+
 type tp struct {
 	topic     string
 	partition int32
@@ -46,7 +48,8 @@ type tableInstance struct {
 	tp                    tp
 	offsetBackend         backend.Backend
 	offsetKey             []byte
-	backend               backend.Backend
+	store                 store.Store
+	storeWriter           StoreWriter
 	config                *globalKTable
 	restartOnFailure      bool
 	restartOnFailureCount int
@@ -105,7 +108,7 @@ func (t *tableInstance) init() {
 	// now get local offset from offset storeName
 	// if local offset is > 0 and > beginOffset then reset beginOffset = local offset
 	// non persistence backends dose not have a local offset
-	if t.localOffset >= startOffset && t.localOffset < endOffset && t.backend.Persistent() {
+	if t.localOffset >= startOffset && t.localOffset < endOffset && t.store.Backend().Persistent() {
 		startOffset = t.localOffset
 		t.logger.Info(fmt.Sprintf(`offset %d found locally`, t.localOffset))
 	}
@@ -178,7 +181,7 @@ func (t *tableInstance) markOffset(offset int64) error {
 
 func (t *tableInstance) offsetLocal() int64 {
 
-	if !t.backend.Persistent() {
+	if !t.store.Backend().Persistent() {
 		return 0
 	}
 
@@ -226,18 +229,13 @@ func (t *tableInstance) process(r *data.Record, retry int, err error) error {
 
 func (t *tableInstance) processRecord(r *data.Record) error {
 	// log compaction (tombstone)
-	if r.Value == nil {
-		if err := t.backend.Delete(r.Key); err != nil {
-			return err
-		}
-	} else {
-		if err := t.backend.Set(r.Key, r.Value, 0); err != nil {
-			return err
-		}
+
+	if err := t.storeWriter(r, t.store); err != nil {
+		return err
 	}
 
 	// if backend is non persistent no need to store the offset locally
-	if !t.backend.Persistent() {
+	if !t.store.Backend().Persistent() {
 		return nil
 	}
 
@@ -336,7 +334,8 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 			t.config = tables[t.tp.topic]
 			t.offsetBackend = offsetBackend
 			t.offsetKey = []byte(t.tp.string())
-			t.backend = tables[t.tp.topic].store.Backend()
+			t.store = tables[t.tp.topic].store
+			t.storeWriter = tables[t.tp.topic].options.storeWriter
 			t.restartOnFailure = true
 			t.restartOnFailureCount = 1
 			t.consumer = partitionConsumer
