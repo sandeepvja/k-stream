@@ -3,6 +3,7 @@ package store
 import (
 	"github.com/pickme-go/k-stream/backend"
 	"github.com/pickme-go/k-stream/k-stream/changelog"
+	"github.com/pickme-go/log/v2"
 	"time"
 )
 
@@ -15,11 +16,13 @@ type storeOptions struct {
 	buffered          bool
 	bufferSize        int
 	compactionEnabled bool
+	logger            log.Logger
 }
 
 type Options func(config *storeOptions)
 
 func (c *storeOptions) apply(options ...Options) {
+	c.logger = log.NewNoopLogger()
 	for _, opt := range options {
 		opt(c)
 	}
@@ -66,5 +69,11 @@ func WithBackend(backend backend.Backend) Options {
 func WithBackendBuilder(builder backend.Builder) Options {
 	return func(config *storeOptions) {
 		config.backendBuilder = builder
+	}
+}
+
+func WithLogger(logger log.Logger) Options {
+	return func(config *storeOptions) {
+		config.logger = logger
 	}
 }

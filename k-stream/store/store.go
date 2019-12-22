@@ -45,23 +45,23 @@ type store struct {
 	changelog  changelog.Changelog
 }
 
-func NewStore(name string, keyEncoder encoding.Encoder, valEncoder encoding.Encoder, logger log.Logger, options ...Options) (Store, error) {
+func NewStore(name string, keyEncoder encoding.Encoder, valEncoder encoding.Encoder, options ...Options) (Store, error) {
 
 	opts := new(storeOptions)
 	opts.apply(options...)
 
 	if opts.backend == nil {
-		backend, err := opts.backendBuilder(name)
+		bk, err := opts.backendBuilder(name)
 		if err != nil {
-			logger.Fatal(`k-stream.Store.Registry`, fmt.Sprintf(`backend builder error - %+v`, err))
+			opts.logger.Fatal(`k-stream.Store.Registry`, fmt.Sprintf(`backend builder error - %+v`, err))
 		}
-		opts.backend = backend
+		opts.backend = bk
 	}
 
 	store := &store{
 		name:       name,
 		keyEncoder: keyEncoder,
-		logger:     logger,
+		logger:     opts.logger,
 		valEncoder: valEncoder,
 		backend:    opts.backend,
 	}
@@ -69,7 +69,7 @@ func NewStore(name string, keyEncoder encoding.Encoder, valEncoder encoding.Enco
 	store.backend.SetExpiry(opts.expiry)
 
 	if opts.changelogEnable {
-		panic(`not yest implemented`)
+		panic(`not yet implemented`)
 		/*p, err := producer.DefaultBuilder(&producer.Option{
 			Partitioner: producer.Random,
 		})
@@ -89,7 +89,7 @@ func NewStore(name string, keyEncoder encoding.Encoder, valEncoder encoding.Enco
 		store.backend.SetExpiry(opts.expiry)*/
 	}
 
-	logger.Info(
+	opts.logger.Info(
 		fmt.Sprintf(`default store [%s] inited`, name))
 
 	return store, nil
@@ -214,41 +214,6 @@ func (s *store) GetAll(ctx context.Context) (Iterator, error) {
 		keyEncoder: s.keyEncoder,
 		valEncoder: s.valEncoder,
 	}, nil
-
-	/*i := s.backend.Iterator()
-	i.SeekToFirst()
-
-	values := make(map[interface{}]interface{}, 0)
-
-	for i.Valid() {
-		if i.Error() != nil {
-			return nil, errors.New( fmt.Sprintf(`store [%s] backend key iterator error `, s.name), i.Error())
-		}
-
-		k, err := s.keyEncoder.Decode(i.Key())
-		if err != nil && len(i.Key()) > 0 {
-			log.Error(log.WithPrefix( fmt.Sprintf(`store [%s] key decode err due to %+v`, s.name, err)))
-			i.Next()
-			continue
-			//return nil, errors.New( `value decode err `, err)
-		}
-
-		if len(i.Value()) < 1 {
-			i.Next()
-			continue
-		}
-
-		v, err := s.valEncoder.Decode(i.Value())
-		if err != nil {
-			return nil, errors.New( fmt.Sprintf(`store [%s] value decode err `, s.name), err)
-		}
-
-		values[k] = v
-
-		i.Next()
-	}
-
-	return values, nil*/
 }
 
 func (s *store) Delete(ctx context.Context, key interface{}) (err error) {

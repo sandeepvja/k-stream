@@ -14,13 +14,28 @@ type MockStore struct {
 	vEncoder encoding.Encoder
 }
 
-func NewMockStore(name string, kEncode encoding.Encoder, vEncoder encoding.Encoder, backend backend.Backend) Store {
-	return &MockStore{
+type MockRecord struct {
+	ctx    context.Context
+	key    interface{}
+	value  interface{}
+	expiry time.Duration
+}
+
+func NewMockStore(name string, kEncode encoding.Encoder, vEncoder encoding.Encoder, backend backend.Backend, records ...MockRecord) Store {
+	store := &MockStore{
 		name:     name,
-		vEncoder: vEncoder,
 		kEncoder: kEncode,
+		vEncoder: vEncoder,
 		backend:  backend,
 	}
+
+	for _, record := range records {
+		if err := store.Set(record.ctx, record.key, record.value, record.expiry); err != nil {
+			panic(err)
+		}
+	}
+
+	return store
 }
 
 func (s *MockStore) Name() string {
