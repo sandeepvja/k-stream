@@ -10,8 +10,8 @@ type KeyMapper func(key, val interface{}) (idx string)
 type Association interface {
 	Name() string
 	KeyMapper() KeyMapper
-	Write(associatedKey, value string) error
-	Delete(associatedKey, value string) error
+	Write(key, value interface{}) error
+	Delete(val, value interface{}) error
 	Read(associatedKey string) ([]string, error)
 }
 
@@ -39,7 +39,7 @@ func (s *association) KeyMapper() KeyMapper {
 	return s.mapper
 }
 
-func (s *association) Write(key, value string) error {
+func (s *association) Write(key, value interface{}) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	associatedKey := s.KeyMapper()(key, value)
@@ -47,11 +47,11 @@ func (s *association) Write(key, value string) error {
 	if !ok {
 		s.indexes[associatedKey] = make(map[string]bool)
 	}
-	s.indexes[associatedKey][key] = true
+	s.indexes[associatedKey][key.(string)] = true
 	return nil
 }
 
-func (s *association) Delete(key, value string) error {
+func (s *association) Delete(key, value interface{}) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	associatedKey := s.KeyMapper()(key, value)
@@ -59,17 +59,17 @@ func (s *association) Delete(key, value string) error {
 		return fmt.Errorf(`assosiation %s does not exist for %s`, associatedKey, s.name)
 	}
 
-	delete(s.indexes[associatedKey], key)
+	delete(s.indexes[associatedKey], key.(string))
 	return nil
 }
 
-func (s *association) Read(associatedKey string) ([]string, error) {
+func (s *association) Read(key string) ([]string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var indexes []string
-	index, ok := s.indexes[associatedKey]
+	index, ok := s.indexes[key]
 	if !ok {
-		return nil, fmt.Errorf(`association %s does not exist`, associatedKey)
+		return nil, fmt.Errorf(`association %s does not exist`, key)
 	}
 	for k := range index {
 		indexes = append(indexes, k)

@@ -42,7 +42,7 @@ func (i *associationStore) Set(ctx context.Context, key, val interface{}, expiry
 	// set associations
 	i.mu.Lock()
 	for _, assoc := range i.associations {
-		if err := assoc.Write(key.(string), val.(string)); err != nil {
+		if err := assoc.Write(key.(string), val); err != nil {
 			return err
 		}
 	}
