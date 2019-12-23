@@ -1,8 +1,6 @@
 package store
 
 import (
-	"github.com/pickme-go/k-stream/backend"
-	"github.com/pickme-go/k-stream/k-stream/encoding"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -10,7 +8,7 @@ import (
 )
 
 func BenchmarkAssociation_Write(b *testing.B) {
-	assoc := NewAssociation(NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0)), func(key, val interface{}) (idx string) {
+	assoc := NewAssociation(`foo`, func(key, val interface{}) (idx string) {
 		return strings.Split(val.(string), `,`)[0]
 	})
 	b.ResetTimer()
@@ -25,7 +23,7 @@ func BenchmarkAssociation_Write(b *testing.B) {
 }
 
 func BenchmarkAssociation_Read(b *testing.B) {
-	assoc := NewAssociation(NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0)), func(key, val interface{}) (idx string) {
+	assoc := NewAssociation(`foo`, func(key, val interface{}) (idx string) {
 		return strings.Split(val.(string), `,`)[0]
 	})
 

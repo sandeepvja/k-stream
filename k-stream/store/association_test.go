@@ -1,19 +1,16 @@
 package store
 
 import (
-	"github.com/pickme-go/k-stream/backend"
-	"github.com/pickme-go/k-stream/k-stream/encoding"
 	"reflect"
 	"strings"
 	"testing"
 )
 
 func TestNewAssociation(t *testing.T) {
-	store := NewMockStore(`test`, nil, nil, backend.NewMockBackend(`test`, 0))
 	var mapper func(key, val interface{}) (idx string)
-	assc := NewAssociation(store, mapper)
+	assc := NewAssociation(`foo`, mapper)
 	type args struct {
-		store  Store
+		name   string
 		mapper KeyMapper
 	}
 	tests := []struct {
@@ -22,13 +19,13 @@ func TestNewAssociation(t *testing.T) {
 		want Association
 	}{
 		{name: `new`, args: struct {
-			store  Store
+			name   string
 			mapper KeyMapper
-		}{store: store, mapper: mapper}, want: assc},
+		}{name: `foo`, mapper: mapper}, want: assc},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewAssociation(tt.args.store, tt.args.mapper); !reflect.DeepEqual(got, tt.want) {
+			if got := NewAssociation(tt.args.name, tt.args.mapper); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewAssociation() = %#v, want %#v", got, tt.want)
 			}
 		})
@@ -36,7 +33,7 @@ func TestNewAssociation(t *testing.T) {
 }
 
 func Test_association_Delete(t *testing.T) {
-	assoc := NewAssociation(NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0)), func(key, val interface{}) (idx string) {
+	assoc := NewAssociation(`foo9`, func(key, val interface{}) (idx string) {
 		return strings.Split(val.(string), `,`)[0]
 	})
 
@@ -65,10 +62,9 @@ func Test_association_Name(t *testing.T) {
 		want  string
 	}{
 		{
-			name: `name`,
-			assoc: NewAssociation(
-				NewMockStore(`test`, nil, nil, backend.NewMockBackend(`test`, 0)), nil),
-			want: `test`},
+			name:  `name`,
+			assoc: NewAssociation(`foo`, nil),
+			want:  `foo`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -80,7 +76,7 @@ func Test_association_Name(t *testing.T) {
 }
 
 func Test_association_Read(t *testing.T) {
-	assoc := NewAssociation(NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0)), func(key, val interface{}) (idx string) {
+	assoc := NewAssociation(`foo`, func(key, val interface{}) (idx string) {
 		return strings.Split(val.(string), `,`)[0]
 	})
 
@@ -99,7 +95,7 @@ func Test_association_Read(t *testing.T) {
 }
 
 func Test_association_Write(t *testing.T) {
-	assoc := NewAssociation(NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0)), func(key, val interface{}) (idx string) {
+	assoc := NewAssociation(`foo`, func(key, val interface{}) (idx string) {
 		return strings.Split(val.(string), `,`)[0]
 	})
 

@@ -6,17 +6,19 @@ import (
 	"github.com/pickme-go/k-stream/k-stream/encoding"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 )
 
 func Test_indexedStore_Delete(t *testing.T) {
-	assoc := NewAssociation(NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0)), func(key, val interface{}) (idx string) {
+	assoc := NewAssociation(`foo`, func(key, val interface{}) (idx string) {
 		return strings.Split(val.(string), `,`)[0]
 	})
 
 	i := &associationStore{
-		Store:        assoc.Store(),
+		Store:        NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0)),
 		associations: map[string]Association{`foo`: assoc},
+		mu:           new(sync.Mutex),
 	}
 
 	if err := i.Set(context.Background(), `200`, `111,222`, 0); err != nil {
@@ -42,13 +44,14 @@ func Test_indexedStore_Delete(t *testing.T) {
 }
 
 func Test_indexedStore_Set(t *testing.T) {
-	assoc := NewAssociation(NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0)), func(key, val interface{}) (idx string) {
+	assoc := NewAssociation(`foo`, func(key, val interface{}) (idx string) {
 		return strings.Split(val.(string), `,`)[0]
 	})
 
 	i := &associationStore{
-		Store:        assoc.Store(),
+		Store:        NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0)),
 		associations: map[string]Association{`foo`: assoc},
+		mu:           new(sync.Mutex),
 	}
 
 	if err := i.Set(context.Background(), `200`, `111,222`, 0); err != nil {
