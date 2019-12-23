@@ -39,7 +39,11 @@ func (dbs *DefaultBuilders) build() {
 	dbs.configs.Store.BackendBuilder = dbs.Backend
 
 	dbs.Store = func(name string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...store.Options) (store.Store, error) {
-		return store.NewStore(name, keyEncoder(), valEncoder(), dbs.configs.Logger, append(options, store.WithBackendBuilder(dbs.configs.Store.BackendBuilder))...)
+		return store.NewStore(name, keyEncoder(), valEncoder(), append(
+			options,
+			store.WithBackendBuilder(dbs.configs.Store.BackendBuilder),
+			store.WithLogger(dbs.configs.Logger),
+		)...)
 	}
 
 	if dbs.Producer == nil {

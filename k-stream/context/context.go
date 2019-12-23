@@ -22,7 +22,6 @@ type Context struct {
 }
 
 func FromRecord(parent context.Context, record *data.Record) context.Context {
-
 	return traceable_context.WithValue(parent, &recordMeta, &RecordMeta{
 		Topic:     record.Topic,
 		Offset:    record.Offset,
@@ -32,7 +31,6 @@ func FromRecord(parent context.Context, record *data.Record) context.Context {
 }
 
 func RecordFromContext(ctx context.Context, key []byte, val []byte) (*data.Record, error) {
-
 	if c, ok := ctx.(*Context); ok {
 
 		meta := Meta(c)
