@@ -59,7 +59,7 @@ func (i *associationStore) Delete(ctx context.Context, key interface{}) error {
 
 	i.mu.Lock()
 	for _, assoc := range i.associations {
-		if err := assoc.Delete(key.(string), val.(string)); err != nil {
+		if err := assoc.Delete(key.(string), val); err != nil {
 			return err
 		}
 	}
