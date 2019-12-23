@@ -67,7 +67,7 @@ func BenchmarkAssociationStore_GetAssociate(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			if _, err := st.GetAssociate(context.Background(), `foo`, strconv.Itoa(rand.Intn(4)+1)); err != nil {
+			if _, err := st.GetAssociateRecords(context.Background(), `foo`, strconv.Itoa(rand.Intn(4)+1)); err != nil {
 				b.Error(err)
 			}
 		}

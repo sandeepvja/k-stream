@@ -10,7 +10,8 @@ import (
 
 type AssociationStore interface {
 	Store
-	GetAssociate(ctx context.Context, name, key string) ([]interface{}, error)
+	GetAssociate(ctx context.Context, name string) (Association, error)
+	GetAssociateRecords(ctx context.Context, name, key string) ([]interface{}, error)
 }
 
 type associationStore struct {
@@ -67,7 +68,18 @@ func (i *associationStore) Delete(ctx context.Context, key interface{}) error {
 	return i.Store.Delete(ctx, key)
 }
 
-func (i *associationStore) GetAssociate(ctx context.Context, name, key string) ([]interface{}, error) {
+func (i *associationStore) GetAssociate(ctx context.Context, name string) (Association, error) {
+	i.mu.Lock()
+	association, ok := i.associations[name]
+	if !ok {
+		return nil, fmt.Errorf(`associate [%s] does not exist`, name)
+	}
+	i.mu.Unlock()
+
+	return association, nil
+}
+
+func (i *associationStore) GetAssociateRecords(ctx context.Context, name, key string) ([]interface{}, error) {
 	i.mu.Lock()
 	association, ok := i.associations[name]
 	if !ok {
