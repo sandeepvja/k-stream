@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pickme-go/log/v2"
 	"net/http"
-	"strconv"
 )
 
 type Err struct {
@@ -171,13 +170,16 @@ func MakeEndpoints(host string, registry Registry, logger log.Logger) {
 			return
 		}
 
+		keyByte := []byte(key)
+
+		decodedKey, err := registry.Store(store).KeyEncoder().Decode(keyByte)
 		//@FIXME
-		keyInt, err := strconv.Atoi(key)
+		//keyInt, err := strconv.Atoi(key)
 		if err != nil {
 			return
 		}
 
-		data, err := registry.Store(store).Get(context.Background(), keyInt)
+		data, err := registry.Store(store).Get(context.Background(), decodedKey)
 		if err != nil {
 			res := h.encodeError(err)
 			if _, err := writer.Write(res); err != nil {
