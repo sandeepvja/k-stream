@@ -117,12 +117,17 @@ func (p *saramaProducer) Close() error {
 
 func (p *saramaProducer) Produce(ctx context.Context, message *data.Record) (partition int32, offset int64, err error) {
 	t := time.Now()
+	 var headers []sarama.RecordHeader
 	m := &sarama.ProducerMessage{
 		Topic:     message.Topic,
 		Key:       sarama.ByteEncoder(message.Key),
 		Value:     sarama.ByteEncoder(message.Value),
 		Timestamp: t,
 	}
+	for _, header := range message.Headers{
+		headers = append(headers, *header)
+	}
+	m.Headers = headers
 
 	if !message.Timestamp.IsZero() {
 		m.Timestamp = message.Timestamp

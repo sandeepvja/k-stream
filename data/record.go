@@ -2,6 +2,7 @@ package data
 
 import (
 	"fmt"
+	"github.com/Shopify/sarama"
 	"github.com/google/uuid"
 	"time"
 )
@@ -18,7 +19,7 @@ type Record struct {
 	Offset         int64
 	Timestamp      time.Time       // only set if kafka is version 0.10+, inner message timestamp
 	BlockTimestamp time.Time       // only set if kafka is version 0.10+, outer (compressed) block timestamp
-	Headers        []*RecordHeader // only set if kafka is version 0.11+
+	Headers        []*sarama.RecordHeader // only set if kafka is version 0.11+
 	UUID           uuid.UUID
 }
 

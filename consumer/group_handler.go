@@ -77,6 +77,7 @@ func (h *groupHandler) ConsumeClaim(g sarama.ConsumerGroupSession, c sarama.Cons
 			Partition: msg.Partition,
 			Timestamp: msg.Timestamp,
 			UUID:      uuid.New(),
+			Headers:   msg.Headers,
 		}
 	}
 
