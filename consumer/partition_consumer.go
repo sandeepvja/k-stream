@@ -20,8 +20,7 @@ type PartitionConsumer interface {
 }
 
 type partitionConsumer struct {
-	id string
-	//client            sarama.Client
+	id                string
 	offsets           offsets.Manager
 	consumerEvents    chan Event
 	consumerErrors    chan *Error
@@ -138,6 +137,7 @@ func (c *partitionConsumer) consumeErrors(consumer sarama.PartitionConsumer) {
 		c.logger.Error(err)
 		c.consumerErrors <- &Error{err}
 	}
+	close(c.consumerErrors)
 }
 
 func (c *partitionConsumer) runBufferMetrics(consumer sarama.PartitionConsumer) {
@@ -250,13 +250,6 @@ func (c *partitionConsumer) Close() error {
 	}
 
 	close(c.consumerEvents)
-
-	// wait until the error chan is closed
-	if c.partitionConsumer.Errors() != nil {
-		<-c.partitionConsumer.Errors()
-	}
-
-	close(c.consumerErrors)
 
 	c.logger.Info(fmt.Sprintf("[%s] closed", c.id))
 	return nil
