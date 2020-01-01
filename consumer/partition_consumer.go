@@ -209,7 +209,7 @@ MainLoop:
 				Partition: msg.Partition,
 				Timestamp: msg.Timestamp,
 				UUID:      uuid.New(),
-				Headers:msg.Headers,
+				Headers:   msg.Headers,
 			}
 
 			//if highWatermark == 0 || highWatermark-1 == msg.Offset {
@@ -250,6 +250,12 @@ func (c *partitionConsumer) Close() error {
 	}
 
 	close(c.consumerEvents)
+
+	// wait until the error chan is closed
+	if c.partitionConsumer.Errors() != nil {
+		<-c.partitionConsumer.Errors()
+	}
+
 	close(c.consumerErrors)
 
 	c.logger.Info(fmt.Sprintf("[%s] closed", c.id))
