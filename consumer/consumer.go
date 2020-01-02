@@ -151,6 +151,7 @@ func (c *consumer) Close() error {
 		c.config.Logger.Error(`k-stream.consumer`,
 			fmt.Sprintf(`cannot close consumer due to %+v`, err))
 	}
+	c.cleanUpMetrics()
 	return nil
 }
 
@@ -176,4 +177,11 @@ func (c *consumer) setUpMetrics() {
 		Path:        `k_stream_consumer_rebalancing`,
 		ConstLabels: map[string]string{`group`: c.config.GroupId},
 	})
+}
+
+func (c *consumer) cleanUpMetrics() {
+	c.saramaGroupHandler.metrics.commitLatency.UnRegister()
+	c.saramaGroupHandler.metrics.endToEndLatency.UnRegister()
+	c.saramaGroupHandler.metrics.reBalanceLatency.UnRegister()
+	c.saramaGroupHandler.metrics.reBalancing.UnRegister()
 }
