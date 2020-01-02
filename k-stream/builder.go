@@ -306,6 +306,7 @@ func (b *StreamBuilder) renderGTableGraph() {
 
 	for topic, tableConfig := range b.globalTables {
 		topicU := strings.ReplaceAll(topic, `-`, `_`)
+		topicU = strings.ReplaceAll(topic, `.`, `_`)
 		b.graph.Source(`globalTables`, `g_table_`+topicU, map[string]string{
 			`label`: fmt.Sprintf(`"topic = %s"`, topic),
 		}, nil)

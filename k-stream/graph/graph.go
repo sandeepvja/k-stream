@@ -8,6 +8,7 @@ import (
 	"github.com/pickme-go/k-stream/k-stream/internal/node"
 	"github.com/pickme-go/k-stream/k-stream/processors"
 	"github.com/pickme-go/k-stream/k-stream/store"
+	"strings"
 )
 
 type Graph struct {
@@ -255,8 +256,10 @@ func (g *Graph) Store(parent string, store store.Store, attrs map[string]string,
 func (g *Graph) RenderTopology(t *node.TopologyBuilder) {
 
 	nName := `streams_` + fmt.Sprint(getId())
+	sourceName := strings.ReplaceAll(t.Source.Name(), `-`, `_`)
+	sourceName = strings.ReplaceAll(t.Source.Name(), `.`, `_`)
 	g.Source(`streams`, nName, map[string]string{
-		`label`: fmt.Sprintf(`"%s"`, nodeInfo(t.Source.SourceType(), t.Source.Name(), t.Source.Info())),
+		`label`: fmt.Sprintf(`"%s"`, nodeInfo(t.Source.SourceType(), sourceName, t.Source.Info())),
 		`shape`: `square`,
 	}, nil)
 
