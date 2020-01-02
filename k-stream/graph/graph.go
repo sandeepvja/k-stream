@@ -257,7 +257,7 @@ func (g *Graph) RenderTopology(t *node.TopologyBuilder) {
 
 	nName := `streams_` + fmt.Sprint(getId())
 	sourceName := strings.ReplaceAll(t.Source.Name(), `-`, `_`)
-	sourceName = strings.ReplaceAll(t.Source.Name(), `.`, `_`)
+	sourceName = strings.ReplaceAll(sourceName, `.`, `_`)
 	g.Source(`streams`, nName, map[string]string{
 		`label`: fmt.Sprintf(`"%s"`, nodeInfo(t.Source.SourceType(), sourceName, t.Source.Info())),
 		`shape`: `square`,
@@ -290,6 +290,8 @@ func draw(parent string, builders []node.NodeBuilder, graph *Graph) {
 		case node.SinkBuilder:
 			//nName := parent + fmt.Sprint(n.ID())
 			nName := n.Name() + string(n.Type()) + fmt.Sprint(n.ID())
+			nName=strings.ReplaceAll(nName, `.`, `_`)
+			nName=strings.ReplaceAll(nName, `-`, `_`)
 			nodeName = nName
 			graph.Sink(parent, nName, map[string]string{
 				`label`: fmt.Sprintf(`"%s"`, nodeInfo(n.SinkType(), n.Name(), n.Info())),
