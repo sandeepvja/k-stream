@@ -1,6 +1,7 @@
 package consumer
 
 import (
+	"context"
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/google/uuid"
@@ -9,6 +10,11 @@ import (
 	"github.com/pickme-go/metrics/v2"
 	"time"
 )
+
+type ReBalanceHandler interface {
+	OnPartitionRevoked(ctx context.Context, revoked []TopicPartition) error
+	OnPartitionAssigned(ctx context.Context, assigned []TopicPartition) error
+}
 
 type groupHandler struct {
 	reBalanceHandler ReBalanceHandler
@@ -25,9 +31,8 @@ type groupHandler struct {
 }
 
 func (h *groupHandler) Setup(session sarama.ConsumerGroupSession) error {
-
 	tps := h.extractTps(session.Claims())
-
+	h.logger.Info(fmt.Sprintf(`setting up partitions [%#v]`, tps))
 	if err := h.reBalanceHandler.OnPartitionAssigned(session.Context(), tps); err != nil {
 		return err
 	}
@@ -43,7 +48,7 @@ func (h *groupHandler) Setup(session sarama.ConsumerGroupSession) error {
 
 func (h *groupHandler) Cleanup(session sarama.ConsumerGroupSession) error {
 	tps := h.extractTps(session.Claims())
-
+	h.logger.Info(fmt.Sprintf(`cleaning up partitions [%#v]`, tps))
 	for _, tp := range tps {
 		h.partitionMap[tp.String()].close()
 		delete(h.partitionMap, tp.String())

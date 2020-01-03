@@ -250,7 +250,13 @@ func (c *partitionConsumer) Close() error {
 	}
 
 	close(c.consumerEvents)
-
+	c.cleanUpMetrics()
 	c.logger.Info(fmt.Sprintf("[%s] closed", c.id))
 	return nil
+}
+
+func (c *partitionConsumer) cleanUpMetrics() {
+	c.metrics.consumerBuffer.UnRegister()
+	c.metrics.consumerBufferMax.UnRegister()
+	c.metrics.endToEndLatency.UnRegister()
 }

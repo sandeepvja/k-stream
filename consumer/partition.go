@@ -13,7 +13,6 @@ type Partition interface {
 }
 
 type partition struct {
-	wait         chan bool
 	records      chan *data.Record
 	groupSession sarama.ConsumerGroupSession
 	partition    TopicPartition
@@ -21,7 +20,6 @@ type partition struct {
 
 func newPartition(tp TopicPartition) *partition {
 	return &partition{
-		wait:      make(chan bool, 1),
 		records:   make(chan *data.Record, 1),
 		partition: tp,
 	}
@@ -45,6 +43,5 @@ func (p *partition) CommitOffset(r *data.Record) error {
 }
 
 func (p *partition) close() {
-	close(p.wait)
 	close(p.records)
 }
