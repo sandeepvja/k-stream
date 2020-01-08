@@ -2,6 +2,7 @@ package kstream
 
 import (
 	"context"
+	"github.com/Shopify/sarama"
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/data"
 	"github.com/pickme-go/k-stream/k-stream/encoding"
@@ -23,6 +24,7 @@ type KSink struct {
 	info              map[string]string
 	KeyEncoderBuilder encoding.Builder
 	ValEncoderBuilder encoding.Builder
+	headerConstructor func(ctx context.Context, key, val interface{}) (records []*sarama.RecordHeader)
 }
 
 func (s *KSink) Childs() []node.Node {
@@ -135,6 +137,12 @@ func withPrefixTopic(topic topic) SinkOption {
 	}
 }
 
+func WithHeaders(f func(ctx context.Context, key, val interface{}) (records []*sarama.RecordHeader)) SinkOption {
+	return func(sink *KSink) {
+		sink.headerConstructor = f
+	}
+}
+
 func NewKSinkBuilder(name string, id int32, topic topic, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption) *KSink {
 
 	builder := &KSink{
@@ -144,9 +152,9 @@ func NewKSinkBuilder(name string, id int32, topic topic, keyEncoder encoding.Bui
 		name:              name,
 		Id:                id,
 	}
+
 	builder.applyOptions(options...)
 	return builder
-
 }
 
 func (s *KSink) Close() error {
@@ -172,6 +180,14 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 			return nil, nil, false, err
 		}
 		record.Value = valByt
+	}
+
+	if s.headerConstructor != nil {
+		headers := s.headerConstructor(ctx, kIn, vIn)
+		if len(headers) > 0 {
+			record.Headers = make([]*sarama.RecordHeader, 0)
+			record.Headers = append(record.Headers, headers...)
+		}
 	}
 
 	if _, _, err := s.Producer.Produce(ctx, record); err != nil {
