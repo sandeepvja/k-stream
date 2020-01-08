@@ -44,13 +44,14 @@ func (s *KSink) Build() (node.Node, error) {
 	}
 
 	return &KSink{
-		KeyEncoder:  s.KeyEncoderBuilder(),
-		ValEncoder:  s.ValEncoderBuilder(),
-		Producer:    p,
-		TopicPrefix: s.TopicPrefix,
-		name:        s.name,
-		topic:       s.topic,
-		info:        s.info,
+		KeyEncoder:        s.KeyEncoderBuilder(),
+		ValEncoder:        s.ValEncoderBuilder(),
+		Producer:          p,
+		TopicPrefix:       s.TopicPrefix,
+		name:              s.name,
+		topic:             s.topic,
+		info:              s.info,
+		headerConstructor: s.headerConstructor,
 	}, nil
 }
 
