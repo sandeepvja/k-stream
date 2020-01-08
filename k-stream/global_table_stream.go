@@ -221,7 +221,7 @@ func (t *tableInstance) process(r *data.Record, retry int, err error) error {
 	if err := t.processRecord(r); err != nil {
 		t.logger.Warn(
 			fmt.Sprintf(`cannot process message on %s[%d] due to [%s], retring...`, r.Topic, r.Partition, err.Error()))
-		t.process(r, retry-1, err)
+		return t.process(r, retry-1, err)
 	}
 
 	return nil
