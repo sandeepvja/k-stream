@@ -41,12 +41,12 @@ func NewStoreWithAssociations(name string, keyEncoder, valEncoder encoding.Encod
 func (i *associationStore) Set(ctx context.Context, key, val interface{}, expiry time.Duration) error {
 	// set associations
 	i.mu.Lock()
+	defer i.mu.Unlock()
 	for _, assoc := range i.associations {
 		if err := assoc.Write(key.(string), val); err != nil {
 			return err
 		}
 	}
-	i.mu.Unlock()
 	return i.Store.Set(ctx, key, val, expiry)
 }
 
@@ -58,34 +58,34 @@ func (i *associationStore) Delete(ctx context.Context, key interface{}) error {
 	}
 
 	i.mu.Lock()
+	defer i.mu.Unlock()
 	for _, assoc := range i.associations {
 		if err := assoc.Delete(key.(string), val); err != nil {
 			return err
 		}
 	}
-	i.mu.Unlock()
 
 	return i.Store.Delete(ctx, key)
 }
 
 func (i *associationStore) GetAssociate(ctx context.Context, name string) (Association, error) {
 	i.mu.Lock()
+	defer i.mu.Unlock()
 	association, ok := i.associations[name]
 	if !ok {
 		return nil, fmt.Errorf(`associate [%s] does not exist`, name)
 	}
-	i.mu.Unlock()
 
 	return association, nil
 }
 
 func (i *associationStore) GetAssociateRecords(ctx context.Context, name, key string) ([]interface{}, error) {
 	i.mu.Lock()
+	defer i.mu.Unlock()
 	association, ok := i.associations[name]
 	if !ok {
 		return nil, fmt.Errorf(`associate [%s] does not exist`, name)
 	}
-	i.mu.Unlock()
 
 	indexes, err := association.Read(key)
 	if err != nil {
