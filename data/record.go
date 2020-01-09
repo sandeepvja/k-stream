@@ -17,8 +17,8 @@ type Record struct {
 	Topic          string
 	Partition      int32
 	Offset         int64
-	Timestamp      time.Time       // only set if kafka is version 0.10+, inner message timestamp
-	BlockTimestamp time.Time       // only set if kafka is version 0.10+, outer (compressed) block timestamp
+	Timestamp      time.Time              // only set if kafka is version 0.10+, inner message timestamp
+	BlockTimestamp time.Time              // only set if kafka is version 0.10+, outer (compressed) block timestamp
 	Headers        []*sarama.RecordHeader // only set if kafka is version 0.11+
 	UUID           uuid.UUID
 }

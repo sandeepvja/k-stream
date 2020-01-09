@@ -5,11 +5,18 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/data"
+	context2 "github.com/pickme-go/k-stream/k-stream/context"
 	"github.com/pickme-go/k-stream/k-stream/encoding"
 	"github.com/pickme-go/k-stream/k-stream/internal/node"
 	"github.com/pickme-go/k-stream/producer"
 	"time"
 )
+
+type SinkRecord struct {
+	Key, Value interface{}
+	Timestamp  time.Time              // only set if kafka is version 0.10+, inner message timestamp
+	Headers    []*sarama.RecordHeader // only set if kafka is version 0.11+
+}
 
 type KSink struct {
 	Id                int32
@@ -24,7 +31,7 @@ type KSink struct {
 	info              map[string]string
 	KeyEncoderBuilder encoding.Builder
 	ValEncoderBuilder encoding.Builder
-	headerConstructor func(ctx context.Context, key, val interface{}) (records []*sarama.RecordHeader)
+	recordTransformer func(in SinkRecord) (out SinkRecord)
 }
 
 func (s *KSink) Childs() []node.Node {
@@ -51,7 +58,7 @@ func (s *KSink) Build() (node.Node, error) {
 		name:              s.name,
 		topic:             s.topic,
 		info:              s.info,
-		headerConstructor: s.headerConstructor,
+		recordTransformer: s.recordTransformer,
 	}, nil
 }
 
@@ -132,15 +139,15 @@ func WithProducer(p producer.Builder) SinkOption {
 	}
 }
 
-func withPrefixTopic(topic topic) SinkOption {
+func WithCustomRecord(f func(in SinkRecord) (out SinkRecord)) SinkOption {
 	return func(sink *KSink) {
-		sink.topic = topic
+		sink.recordTransformer = f
 	}
 }
 
-func WithHeaders(f func(ctx context.Context, key, val interface{}) (records []*sarama.RecordHeader)) SinkOption {
+func withPrefixTopic(topic topic) SinkOption {
 	return func(sink *KSink) {
-		sink.headerConstructor = f
+		sink.topic = topic
 	}
 }
 
@@ -168,6 +175,22 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 	record.Timestamp = time.Now()
 	record.Topic = s.topic(s.TopicPrefix)
 
+	if s.recordTransformer != nil {
+
+		meta := context2.Meta(ctx)
+		customRecord := s.recordTransformer(SinkRecord{
+			Key:       kIn,
+			Value:     vIn,
+			Timestamp: record.Timestamp,
+			Headers:   meta.Headers,
+		})
+
+		kIn = customRecord.Key
+		vIn = customRecord.Value
+		record.Headers = customRecord.Headers
+		record.Timestamp = customRecord.Timestamp
+	}
+
 	keyByt, err := s.KeyEncoder.Encode(kIn)
 	if err != nil {
 		return nil, nil, false, err
@@ -181,14 +204,6 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 			return nil, nil, false, err
 		}
 		record.Value = valByt
-	}
-
-	if s.headerConstructor != nil {
-		headers := s.headerConstructor(ctx, kIn, vIn)
-		if len(headers) > 0 {
-			record.Headers = make([]*sarama.RecordHeader, 0)
-			record.Headers = append(record.Headers, headers...)
-		}
 	}
 
 	if _, _, err := s.Producer.Produce(ctx, record); err != nil {
