@@ -139,7 +139,7 @@ func WithProducer(p producer.Builder) SinkOption {
 	}
 }
 
-func WithCustomRecord(f func(in SinkRecord) (out SinkRecord)) SinkOption {
+func WithCustomRecord(f func(ctx context.Context, in SinkRecord) (out SinkRecord)) SinkOption {
 	return func(sink *KSink) {
 		sink.recordTransformer = f
 	}
