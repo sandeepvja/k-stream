@@ -10,10 +10,6 @@ import (
 	"time"
 )
 
-func init() {
-	//sarama.logger = log.New(os.Stdout, ``, log.Lmicroseconds)
-}
-
 type TopicPartition struct {
 	Topic     string
 	Partition int32

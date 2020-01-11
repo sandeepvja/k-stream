@@ -52,6 +52,5 @@ func Meta(ctx context.Context) *RecordMeta {
 	if meta, ok := ctx.Value(&recordMeta).(*RecordMeta); ok {
 		return meta
 	}
-
 	panic(`k-stream.context meta not available`)
 }

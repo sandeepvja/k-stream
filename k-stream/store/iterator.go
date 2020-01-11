@@ -55,7 +55,6 @@ func (i *iterator) Close() {
 }
 
 func (i *iterator) Key() (interface{}, error) {
-
 	k := i.iterator.Key()
 	if len(k) < 1 {
 		return nil, nil
