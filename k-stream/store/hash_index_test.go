@@ -57,18 +57,18 @@ func TestHashIndex_Delete(t *testing.T) {
 
 func TestHashIndex_Name(t *testing.T) {
 	tests := []struct {
-		name  string
-		assoc Index
-		want  string
+		name string
+		idx  Index
+		want string
 	}{
 		{
-			name:  `name`,
-			assoc: NewStringHashIndex(`foo`, nil),
-			want:  `foo`},
+			name: `name`,
+			idx:  NewStringHashIndex(`foo`, nil),
+			want: `foo`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.assoc.Name(); got != tt.want {
+			if got := tt.idx.Name(); got != tt.want {
 				t.Errorf("Name() = %v, want %v", got, tt.want)
 			}
 		})

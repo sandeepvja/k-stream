@@ -15,13 +15,13 @@ import (
 )
 
 func BenchmarkIndexedStore_Set(b *testing.B) {
-	assoc := NewStringHashIndex(`foo`, func(key, val interface{}) (idx string) {
+	index := NewStringHashIndex(`foo`, func(key, val interface{}) (idx string) {
 		return strings.Split(val.(string), `,`)[0]
 	})
 
 	i := &indexedStore{
 		Store:   NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0)),
-		indexes: map[string]Index{`foo`: assoc},
+		indexes: map[string]Index{`foo`: index},
 		mu:      new(sync.Mutex),
 	}
 	b.ResetTimer()
@@ -35,15 +35,15 @@ func BenchmarkIndexedStore_Set(b *testing.B) {
 }
 
 func BenchmarkIndexedStore_GetIndexedRecords(b *testing.B) {
-	assocStore := NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0))
+	indexedStore := NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0))
 	for i := 1; i < 99909; i++ {
 		compKey := strconv.Itoa(rand.Intn(4)+1) + `:` + strconv.Itoa(i)
-		if err := assocStore.Set(context.Background(), strconv.Itoa(i), compKey, 0); err != nil {
+		if err := indexedStore.Set(context.Background(), strconv.Itoa(i), compKey, 0); err != nil {
 			b.Error(err)
 		}
 	}
 
-	assoc := NewStringHashIndex(`foo`, func(key, val interface{}) (idx string) {
+	index := NewStringHashIndex(`foo`, func(key, val interface{}) (idx string) {
 		return strings.Split(val.(string), `:`)[0]
 	})
 
@@ -51,7 +51,7 @@ func BenchmarkIndexedStore_GetIndexedRecords(b *testing.B) {
 		`foo`,
 		encoding.StringEncoder{},
 		encoding.StringEncoder{},
-		[]Index{assoc},
+		[]Index{index},
 		WithBackend(memory.NewMemoryBackend(log.NewNoopLogger(), metrics.NoopReporter())))
 	if err != nil {
 		b.Error(err)

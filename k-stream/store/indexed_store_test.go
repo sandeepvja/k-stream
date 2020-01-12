@@ -11,13 +11,13 @@ import (
 )
 
 func Test_indexedStore_Delete(t *testing.T) {
-	assoc := NewStringHashIndex(`foo`, func(key, val interface{}) (idx string) {
+	index := NewStringHashIndex(`foo`, func(key, val interface{}) (idx string) {
 		return strings.Split(val.(string), `,`)[0]
 	})
 
 	i := &indexedStore{
 		Store:   NewMockStore(`foo`, encoding.StringEncoder{}, encoding.StringEncoder{}, backend.NewMockBackend(`foo`, 0)),
-		indexes: map[string]Index{`foo`: assoc},
+		indexes: map[string]Index{`foo`: index},
 		mu:      new(sync.Mutex),
 	}
 
@@ -33,7 +33,7 @@ func Test_indexedStore_Delete(t *testing.T) {
 		t.Error(err)
 	}
 
-	data, err := assoc.Read(`111`)
+	data, err := index.Read(`111`)
 	if err != nil {
 		t.Error(err)
 	}

@@ -34,8 +34,8 @@ func NewIndexedStore(name string, keyEncoder, valEncoder encoding.Encoder, index
 	}
 
 	idxs := make(map[string]Index)
-	for _, association := range indexes {
-		idxs[association.Name()] = association
+	for _, idx := range indexes {
+		idxs[idx.Name()] = idx
 	}
 
 	return &indexedStore{
