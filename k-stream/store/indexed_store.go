@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/pickme-go/k-stream/k-stream/encoding"
 	"sync"
@@ -92,12 +93,15 @@ func (i *indexedStore) GetIndexedRecords(ctx context.Context, index, key string)
 		return nil, fmt.Errorf(`associate [%s] does not exist`, index)
 	}
 
+	var records []interface{}
 	indexes, err := idx.Read(key)
 	if err != nil {
+		if errors.Is(err, UnknownIndex) {
+			return records, nil
+		}
 		return nil, err
 	}
 
-	var records []interface{}
 	for _, index := range indexes {
 		record, err := i.Get(ctx, index)
 		if err != nil {

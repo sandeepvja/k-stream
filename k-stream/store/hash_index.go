@@ -1,11 +1,14 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 )
 
 type KeyMapper func(key, val interface{}) (idx string)
+
+var UnknownIndex = errors.New(`index does not exist`)
 
 type stringHashIndex struct {
 	indexes map[string]map[string]bool // indexKey:recordKey:bool
@@ -57,7 +60,7 @@ func (s *stringHashIndex) Read(key string) ([]interface{}, error) {
 	var indexes []interface{}
 	index, ok := s.indexes[key]
 	if !ok {
-		return nil, fmt.Errorf(`stringHashIndex %s does not exist`, key)
+		return nil, UnknownIndex
 	}
 	for k := range index {
 		indexes = append(indexes, k)
