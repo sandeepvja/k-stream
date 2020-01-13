@@ -2,13 +2,21 @@ package kstream
 
 import (
 	"context"
+	"github.com/Shopify/sarama"
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/data"
+	context2 "github.com/pickme-go/k-stream/k-stream/context"
 	"github.com/pickme-go/k-stream/k-stream/encoding"
 	"github.com/pickme-go/k-stream/k-stream/internal/node"
 	"github.com/pickme-go/k-stream/producer"
 	"time"
 )
+
+type SinkRecord struct {
+	Key, Value interface{}
+	Timestamp  time.Time              // only set if kafka is version 0.10+, inner message timestamp
+	Headers    []*sarama.RecordHeader // only set if kafka is version 0.11+
+}
 
 type KSink struct {
 	Id                int32
@@ -23,6 +31,7 @@ type KSink struct {
 	info              map[string]string
 	KeyEncoderBuilder encoding.Builder
 	ValEncoderBuilder encoding.Builder
+	recordTransformer func(ctx context.Context, in SinkRecord) (out SinkRecord)
 }
 
 func (s *KSink) Childs() []node.Node {
@@ -42,13 +51,14 @@ func (s *KSink) Build() (node.Node, error) {
 	}
 
 	return &KSink{
-		KeyEncoder:  s.KeyEncoderBuilder(),
-		ValEncoder:  s.ValEncoderBuilder(),
-		Producer:    p,
-		TopicPrefix: s.TopicPrefix,
-		name:        s.name,
-		topic:       s.topic,
-		info:        s.info,
+		KeyEncoder:        s.KeyEncoderBuilder(),
+		ValEncoder:        s.ValEncoderBuilder(),
+		Producer:          p,
+		TopicPrefix:       s.TopicPrefix,
+		name:              s.name,
+		topic:             s.topic,
+		info:              s.info,
+		recordTransformer: s.recordTransformer,
 	}, nil
 }
 
@@ -129,6 +139,12 @@ func WithProducer(p producer.Builder) SinkOption {
 	}
 }
 
+func WithCustomRecord(f func(ctx context.Context, in SinkRecord) (out SinkRecord)) SinkOption {
+	return func(sink *KSink) {
+		sink.recordTransformer = f
+	}
+}
+
 func withPrefixTopic(topic topic) SinkOption {
 	return func(sink *KSink) {
 		sink.topic = topic
@@ -144,9 +160,9 @@ func NewKSinkBuilder(name string, id int32, topic topic, keyEncoder encoding.Bui
 		name:              name,
 		Id:                id,
 	}
+
 	builder.applyOptions(options...)
 	return builder
-
 }
 
 func (s *KSink) Close() error {
@@ -158,6 +174,22 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 	record := new(data.Record)
 	record.Timestamp = time.Now()
 	record.Topic = s.topic(s.TopicPrefix)
+
+	if s.recordTransformer != nil {
+
+		meta := context2.Meta(ctx)
+		customRecord := s.recordTransformer(ctx, SinkRecord{
+			Key:       kIn,
+			Value:     vIn,
+			Timestamp: record.Timestamp,
+			Headers:   meta.Headers,
+		})
+
+		kIn = customRecord.Key
+		vIn = customRecord.Value
+		record.Headers = customRecord.Headers
+		record.Timestamp = customRecord.Timestamp
+	}
 
 	keyByt, err := s.KeyEncoder.Encode(kIn)
 	if err != nil {
