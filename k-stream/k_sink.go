@@ -133,9 +133,7 @@ func (s *KSink) Info() map[string]string {
 
 func WithProducer(p producer.Builder) SinkOption {
 	return func(sink *KSink) {
-		sink.ProducerBuilder = func(conf *producer.Config) (producer.Producer, error) {
-			return p(nil)
-		}
+		sink.ProducerBuilder = p
 	}
 }
 
