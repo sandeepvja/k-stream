@@ -2,6 +2,7 @@ package context
 
 import (
 	"context"
+	"github.com/Shopify/sarama"
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/data"
 	"github.com/pickme-go/traceable-context"
@@ -15,6 +16,7 @@ type RecordMeta struct {
 	Partition int32
 	Offset    int64
 	Timestamp time.Time
+	Headers   []*sarama.RecordHeader
 }
 
 type Context struct {
@@ -27,6 +29,7 @@ func FromRecord(parent context.Context, record *data.Record) context.Context {
 		Offset:    record.Offset,
 		Partition: record.Partition,
 		Timestamp: record.Timestamp,
+		Headers:   record.Headers,
 	})
 }
 
@@ -42,6 +45,7 @@ func RecordFromContext(ctx context.Context, key []byte, val []byte) (*data.Recor
 			Timestamp: meta.Timestamp,
 			Key:       key,
 			Value:     val,
+			Headers:   meta.Headers,
 		}, nil
 	}
 
@@ -52,6 +56,5 @@ func Meta(ctx context.Context) *RecordMeta {
 	if meta, ok := ctx.Value(&recordMeta).(*RecordMeta); ok {
 		return meta
 	}
-
 	panic(`k-stream.context meta not available`)
 }
