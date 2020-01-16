@@ -98,7 +98,6 @@ func (m *memory) runCleaner() {
 }
 
 func (m *memory) snapshot() []memoryRecord {
-
 	records := make([]memoryRecord, 0)
 
 	m.records.Range(func(key, value interface{}) bool {
