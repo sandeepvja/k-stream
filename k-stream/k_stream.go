@@ -632,7 +632,9 @@ func (s *kStream) build(node node.NodeBuilder) error {
 		nd.Registry = s.config.builder.storeRegistry
 
 	case *KSink:
-		nd.ProducerBuilder = s.config.builder.defaultBuilders.Producer
+		if nd.ProducerBuilder == nil {
+			nd.ProducerBuilder = s.config.builder.defaultBuilders.Producer
+		}
 		nd.TopicPrefix = s.config.builder.config.ApplicationId + `_`
 	}
 
