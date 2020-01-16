@@ -38,7 +38,7 @@ func (c *Config) setDefaults() {
 	c.Producer.Return.Errors = true
 	c.Producer.Return.Successes = true
 	c.Logger = log.NewNoopLogger()
-	c.Version = sarama.V2_3_0_0
+	//c.Config.Version = sarama.V2_3_0_0
 	c.MetricsReporter = metrics.NoopReporter()
 
 	c.Producer.Compression = sarama.CompressionSnappy
