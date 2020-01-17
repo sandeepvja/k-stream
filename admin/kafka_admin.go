@@ -12,7 +12,6 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/log/v2"
-	"time"
 )
 
 type Partition struct {
@@ -44,8 +43,7 @@ type KafkaAdminConfig struct {
 }
 
 type kafkaAdmin struct {
-	broker *sarama.Broker
-	client sarama.Client
+	admin  sarama.ClusterAdmin
 	logger log.Logger
 }
 
@@ -53,33 +51,25 @@ func NewKafkaAdmin(config *KafkaAdminConfig) *kafkaAdmin {
 	saramaConfig := sarama.NewConfig()
 	saramaConfig.Version = config.KafkaVersion
 	logger := config.Logger.NewLog(log.Prefixed(`kafka-admin`))
-	client, err := sarama.NewClient(config.BootstrapServers, saramaConfig)
-	if err != nil {
-		logger.Fatal(fmt.Sprintf(`cannot initiate builder deu to [%+v]`, err))
-	}
-	controller, err := client.Controller()
+	admin, err := sarama.NewClusterAdmin(config.BootstrapServers, saramaConfig)
 	if err != nil {
 		logger.Fatal(fmt.Sprintf(`cannot get controller - %+v`, err))
 	}
 
 	return &kafkaAdmin{
-		client: client,
-		broker: controller,
+		admin:  admin,
 		logger: logger,
 	}
 }
 
 func (c *kafkaAdmin) FetchInfo(topics []string) (map[string]*Topic, error) {
-	req := new(sarama.MetadataRequest)
-	req.Topics = topics
-
-	res, err := c.broker.GetMetadata(req)
+	topicInfo := make(map[string]*Topic)
+	topicMeta, err := c.admin.DescribeTopics(topics)
 	if err != nil {
 		return nil, errors.WithPrevious(err, `cannot get metadata : `)
 	}
+	for _, tp := range topicMeta {
 
-	topicInfo := make(map[string]*Topic)
-	for _, tp := range res.Topics {
 		var pts []Partition
 		for _, pt := range tp.Partitions {
 			pts = append(pts, Partition{
@@ -101,7 +91,6 @@ func (c *kafkaAdmin) FetchInfo(topics []string) (map[string]*Topic, error) {
 }
 
 func (c *kafkaAdmin) CreateTopics(topics map[string]*Topic) error {
-	req := new(sarama.CreateTopicsRequest)
 	for _, info := range topics {
 		details := &sarama.TopicDetail{
 			NumPartitions:     info.NumPartitions,
@@ -113,56 +102,36 @@ func (c *kafkaAdmin) CreateTopics(topics map[string]*Topic) error {
 			details.ConfigEntries[name] = &config
 		}
 
-		req.TopicDetails = map[string]*sarama.TopicDetail{}
-		req.TopicDetails[info.Name] = details
-	}
-	req.Timeout = 30 * time.Second
-	res, err := c.broker.CreateTopics(req)
-	if err != nil {
-		return errors.WithPrevious(err, `could not create topic`)
-	}
-
-	for _, err := range res.TopicErrors {
-		if err.Err == sarama.ErrTopicAlreadyExists {
-			c.logger.Warn(err.Err)
-			return nil
+		err := c.admin.CreateTopic(info.Name, details, false)
+		if err != nil {
+			if err == sarama.ErrTopicAlreadyExists || err == sarama.ErrNoError {
+				c.logger.Warn(err)
+				continue
+			}
+			return errors.WithPrevious(err, `could not create topic`)
 		}
 
-		if err.Err == sarama.ErrNoError {
-			c.logger.Warn(err.Err.Error())
-			return nil
-		}
-
-		c.logger.Fatal(err.Err)
 	}
 
-	if len(res.TopicErrors) < 1 {
-		c.logger.Info(`k-stream.kafkaAdmin`,
-			fmt.Sprintf(`kafkaAdmin topics created - %+v`, topics))
-	}
+	c.logger.Info(`k-stream.kafkaAdmin`,
+		fmt.Sprintf(`kafkaAdmin topics created - %+v`, topics))
 
-	return err
+	return nil
 }
 
 func (c *kafkaAdmin) DeleteTopics(topics []string) (map[string]error, error) {
-	req := new(sarama.DeleteTopicsRequest)
-	req.Topics = topics
-
-	errs := make(map[string]error)
-	res, err := c.broker.DeleteTopics(req)
-	if err != nil {
-		return nil, errors.WithPrevious(err, `could not delete topic :`)
+	for _, topic := range topics {
+		err := c.admin.DeleteTopic(topic)
+		if err != nil {
+			return nil, errors.WithPrevious(err, `could not delete topic :`)
+		}
 	}
 
-	for topic, err := range res.TopicErrorCodes {
-		errs[topic] = err
-	}
-
-	return errs, err
+	return make(map[string]error), nil
 }
 
 func (c *kafkaAdmin) Close() {
-	if err := c.broker.Close(); err != nil {
+	if err := c.admin.Close(); err != nil {
 		c.logger.Warn(`k-stream.kafkaAdmin`,
 			fmt.Sprintf(`kafkaAdmin cannot close broker : %+v`, err))
 	}
