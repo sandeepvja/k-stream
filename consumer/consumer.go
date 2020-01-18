@@ -7,6 +7,7 @@ import (
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/log/v2"
 	"github.com/pickme-go/metrics/v2"
+	"sync"
 	"time"
 )
 
@@ -39,7 +40,7 @@ func (o Offset) String() string {
 	case -1:
 		return `Latest`
 	default:
-		return `Unknown`
+		return fmt.Sprint(int(o))
 	}
 }
 
@@ -57,7 +58,6 @@ type consumer struct {
 }
 
 func NewConsumer(config *Config) (Consumer, error) {
-
 	if err := config.validate(); err != nil {
 		return nil, err
 	}
@@ -81,6 +81,7 @@ func NewConsumer(config *Config) (Consumer, error) {
 func (c *consumer) Consume(tps []string, handler ReBalanceHandler) (chan Partition, error) {
 
 	c.saramaGroupHandler = &groupHandler{
+		mu:               new(sync.Mutex),
 		reBalanceHandler: handler,
 		partitions:       make(chan Partition, 1000),
 		partitionMap:     make(map[string]*partition),
@@ -121,7 +122,7 @@ CLoop:
 
 		select {
 		case <-c.context.ctx.Done():
-			c.config.Logger.Info(fmt.Sprintf(`stopping consumer due to %s`, c.context.ctx.Err()))
+			c.config.Logger.Info(fmt.Sprintf(`stopping consumer due to %s`, c.context.ctx))
 			break CLoop
 		default:
 			continue CLoop
@@ -147,6 +148,7 @@ func (c *consumer) Close() error {
 		c.config.Logger.Error(`k-stream.consumer`,
 			fmt.Sprintf(`cannot close consumer due to %+v`, err))
 	}
+	<-c.stopped
 	c.cleanUpMetrics()
 	return nil
 }

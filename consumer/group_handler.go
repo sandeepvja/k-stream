@@ -8,6 +8,7 @@ import (
 	"github.com/pickme-go/k-stream/data"
 	"github.com/pickme-go/log/v2"
 	"github.com/pickme-go/metrics/v2"
+	"sync"
 	"time"
 )
 
@@ -21,6 +22,7 @@ type groupHandler struct {
 	partitionMap     map[string]*partition
 	partitions       chan Partition
 	logger           log.Logger
+	mu               *sync.Mutex
 	metrics          struct {
 		reporter         metrics.Reporter
 		reBalancing      metrics.Gauge
@@ -37,6 +39,9 @@ func (h *groupHandler) Setup(session sarama.ConsumerGroupSession) error {
 		return err
 	}
 
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
 	for _, tp := range tps {
 		p := newPartition(tp)
 		h.partitionMap[tp.String()] = p
@@ -49,10 +54,13 @@ func (h *groupHandler) Setup(session sarama.ConsumerGroupSession) error {
 func (h *groupHandler) Cleanup(session sarama.ConsumerGroupSession) error {
 	tps := h.extractTps(session.Claims())
 	h.logger.Info(fmt.Sprintf(`cleaning up partitions [%#v]`, tps))
+
+	h.mu.Lock()
 	for _, tp := range tps {
 		h.partitionMap[tp.String()].close()
 		delete(h.partitionMap, tp.String())
 	}
+	h.mu.Unlock()
 
 	return h.reBalanceHandler.OnPartitionRevoked(session.Context(), tps)
 }
@@ -63,8 +71,10 @@ func (h *groupHandler) ConsumeClaim(g sarama.ConsumerGroupSession, c sarama.Cons
 		Partition: c.Partition(),
 	}
 
+	h.mu.Lock()
 	h.partitionMap[tp.String()].groupSession = g
 	ch := h.partitionMap[tp.String()].records
+	h.mu.Unlock()
 
 	for msg := range c.Messages() {
 		t := time.Since(msg.Timestamp)

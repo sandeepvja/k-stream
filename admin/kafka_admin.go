@@ -104,13 +104,12 @@ func (c *kafkaAdmin) CreateTopics(topics map[string]*Topic) error {
 
 		err := c.admin.CreateTopic(info.Name, details, false)
 		if err != nil {
-			if err == sarama.ErrTopicAlreadyExists || err == sarama.ErrNoError {
+			if e, ok := err.(sarama.KError); ok && e == sarama.ErrTopicAlreadyExists || e == sarama.ErrNoError {
 				c.logger.Warn(err)
 				continue
 			}
 			return errors.WithPrevious(err, `could not create topic`)
 		}
-
 	}
 
 	c.logger.Info(`k-stream.kafkaAdmin`,

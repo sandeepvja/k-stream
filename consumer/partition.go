@@ -38,7 +38,7 @@ func (p *partition) MarkOffset(offset int64) {
 }
 
 func (p *partition) CommitOffset(r *data.Record) error {
-	p.groupSession.MarkOffset(r.Topic, r.Partition, r.Offset, ``)
+	p.groupSession.MarkOffset(r.Topic, r.Partition, r.Offset+1, ``)
 	return nil
 }
 

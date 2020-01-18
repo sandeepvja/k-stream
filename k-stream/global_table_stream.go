@@ -121,7 +121,6 @@ func (t *tableInstance) init() {
 }
 
 func (t *tableInstance) start() error {
-
 	events, err := t.consumer.Consume(t.tp.topic, t.tp.partition, consumer.Offset(t.startOffset))
 	if err != nil {
 		//return errors.New( `cannot start globalTableStream`, err)

@@ -95,6 +95,8 @@ func (c *partitionConsumer) Consume(topic string, partition int32, offset Offset
 
 	// partition is empty
 	if offset == Offset(sarama.OffsetNewest) || partitionEnd == 0 || partitionStart == partitionEnd || offset == Offset(partitionEnd-1) {
+		// change the offset to default offset
+		offset = Offset(sarama.OffsetOldest)
 		c.consumerEvents <- &PartitionEnd{
 			tps: []TopicPartition{{
 				Topic:     topic,
@@ -238,15 +240,22 @@ func (c *partitionConsumer) Close() error {
 	<-c.closed
 
 	if err := c.partitionConsumer.Close(); err != nil {
-		c.logger.Error(fmt.Sprintf("cannot close [%s] ", err))
+
+		if errs, ok := err.(sarama.ConsumerErrors); ok {
+			for _, er := range errs {
+				c.logger.Warn(fmt.Sprintf("partition consumer error while closing [%s] ", er))
+			}
+		}
+
+		c.logger.Error(fmt.Sprintf("partition consumer close failed [%s] ", err))
 	}
 
 	if err := c.consumer.Close(); err != nil {
-		c.logger.Error(fmt.Sprintf("cannot close [%s] ", err))
+		c.logger.Error(fmt.Sprintf("consumer close failed [%s] ", err))
 	}
 
 	if err := c.offsets.Close(); err != nil {
-		c.logger.Error(fmt.Sprintf("cannot close [%s] ", err))
+		c.logger.Error(fmt.Sprintf("cannot close offsets [%s] ", err))
 	}
 
 	close(c.consumerEvents)
