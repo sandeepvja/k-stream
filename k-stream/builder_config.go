@@ -69,7 +69,7 @@ type StreamBuilderConfig struct {
 	DefaultBuilders *DefaultBuilders
 }
 
-var logger log.Logger = log.NewLog(log.WithColors(true), log.WithFilePath(true), log.WithLevel(log.TRACE), log.Prefixed(`k-stream`)).Log()
+var logger = log.NewLog(log.WithColors(true), log.WithFilePath(true), log.WithLevel(log.TRACE), log.Prefixed(`k-stream`)).Log()
 
 func NewStreamBuilderConfig() *StreamBuilderConfig {
 	config := &StreamBuilderConfig{}
@@ -193,7 +193,7 @@ func (c *StreamBuilderConfig) String(b *StreamBuilder) string {
 		{"kstream.ApplicationId", fmt.Sprint(c.ApplicationId)},
 		{"kstream.BootstrapServers", strings.Join(c.BootstrapServers, `, `)},
 		{"kstream.ConsumerCount", fmt.Sprint(c.ConsumerCount)},
-		{"kstream.Consumer.AutoCommitInterval", fmt.Sprint(c.Consumer.Config.Consumer.Offsets.CommitInterval)},
+		{"kstream.Consumer.AutoCommitInterval", fmt.Sprint(c.Consumer.Config.Consumer.Offsets.AutoCommit.Enable)},
 		{"kstream.Consumer.OffsetBegin", fmt.Sprint(c.Consumer.Consumer.Offsets.Initial)},
 		{"kstream.Consumer.AsyncProcessing", fmt.Sprint(c.AsyncProcessing)},
 		//{"kstream.Consumer.AutoCommitEnable", fmt.Sprint(c.Consumer.AutoCommitEnable)},
