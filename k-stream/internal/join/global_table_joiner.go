@@ -43,6 +43,9 @@ func (j *GlobalTableJoiner) Next() bool {
 
 func (j *GlobalTableJoiner) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut interface{}, next bool, err error) {
 	v, err := j.Join(ctx, kIn, vIn)
+	if err != nil {
+		return
+	}
 
 	for _, child := range j.childs {
 		_, _, next, err := child.Run(ctx, kIn, v)
@@ -76,14 +79,14 @@ func (j *GlobalTableJoiner) Build() (node.Node, error) { //TODO: write new build
 	}
 
 	return &GlobalTableJoiner{
-		Id:            j.Id,
-		Typ:           j.Typ,
-		Store:         j.Store,
-		KeyMapper:     j.KeyMapper,
-		ValueMapper:  j.ValueMapper,
-		store:         j.store,
-		Registry:      j.Registry,
-		childs:        childs,
+		Id:          j.Id,
+		Typ:         j.Typ,
+		Store:       j.Store,
+		KeyMapper:   j.KeyMapper,
+		ValueMapper: j.ValueMapper,
+		store:       j.store,
+		Registry:    j.Registry,
+		childs:      childs,
 	}, nil
 }
 
