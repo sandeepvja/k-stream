@@ -31,7 +31,7 @@ type KSink struct {
 	info              map[string]string
 	KeyEncoderBuilder encoding.Builder
 	ValEncoderBuilder encoding.Builder
-	recordTransformer func(ctx context.Context, in SinkRecord) (out SinkRecord)
+	recordTransformer func(ctx context.Context, in SinkRecord) (out SinkRecord, err error)
 }
 
 func (s *KSink) Childs() []node.Node {
@@ -137,7 +137,7 @@ func WithProducer(p producer.Builder) SinkOption {
 	}
 }
 
-func WithCustomRecord(f func(ctx context.Context, in SinkRecord) (out SinkRecord)) SinkOption {
+func WithCustomRecord(f func(ctx context.Context, in SinkRecord) (out SinkRecord, err error)) SinkOption {
 	return func(sink *KSink) {
 		sink.recordTransformer = f
 	}
@@ -176,12 +176,15 @@ func (s *KSink) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inter
 	if s.recordTransformer != nil {
 
 		meta := context2.Meta(ctx)
-		customRecord := s.recordTransformer(ctx, SinkRecord{
+		customRecord, err := s.recordTransformer(ctx, SinkRecord{
 			Key:       kIn,
 			Value:     vIn,
 			Timestamp: record.Timestamp,
 			Headers:   meta.Headers,
 		})
+		if err != nil {
+			return nil, nil, false, err
+		}
 
 		kIn = customRecord.Key
 		vIn = customRecord.Value
