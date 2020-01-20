@@ -13,13 +13,13 @@ type Index interface {
 	Name() string
 	Write(key, value interface{}) error
 	Delete(val, value interface{}) error
-	Read(index string) ([]interface{}, error)
+	Read(index interface{}) ([]interface{}, error)
 }
 
 type IndexedStore interface {
 	Store
 	GetIndex(ctx context.Context, name string) (Index, error)
-	GetIndexedRecords(ctx context.Context, index, key string) ([]interface{}, error)
+	GetIndexedRecords(ctx context.Context, index string, key interface{}) ([]interface{}, error)
 }
 
 type indexedStore struct {
@@ -85,7 +85,7 @@ func (i *indexedStore) GetIndex(_ context.Context, name string) (Index, error) {
 	return index, nil
 }
 
-func (i *indexedStore) GetIndexedRecords(ctx context.Context, index, key string) ([]interface{}, error) {
+func (i *indexedStore) GetIndexedRecords(ctx context.Context, index string, key interface{}) ([]interface{}, error) {
 	i.mu.Lock()
 	idx, ok := i.indexes[index]
 	i.mu.Unlock()

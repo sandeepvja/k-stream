@@ -113,7 +113,7 @@ func (c *consumer) Consume(tps []string, handler ReBalanceHandler) (chan Partiti
 func (c *consumer) consume(ctx context.Context, tps []string, h sarama.ConsumerGroupHandler) {
 CLoop:
 	for {
-		if err := c.saramaGroup.Consume(ctx, tps, h); err != nil {
+		if err := c.saramaGroup.Consume(ctx, tps, h); err != nil && err != sarama.ErrClosedConsumerGroup {
 			t := 2 * time.Second
 			c.config.Logger.Error(fmt.Sprintf(`consumer err (%s) while consuming. retrying in %s`, err, t.String()))
 			time.Sleep(t)
@@ -143,12 +143,12 @@ func (c *consumer) Close() error {
 	defer close(c.saramaGroupHandler.partitions)
 
 	c.context.cancel()
+	<-c.stopped
 	// close sarama consumer so application will leave from the consumer group
 	if err := c.saramaGroup.Close(); err != nil {
 		c.config.Logger.Error(`k-stream.consumer`,
 			fmt.Sprintf(`cannot close consumer due to %+v`, err))
 	}
-	<-c.stopped
 	c.cleanUpMetrics()
 	return nil
 }

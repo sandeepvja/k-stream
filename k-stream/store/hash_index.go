@@ -54,11 +54,11 @@ func (s *stringHashIndex) Delete(key, value interface{}) error {
 	return nil
 }
 
-func (s *stringHashIndex) Read(key string) ([]interface{}, error) {
+func (s *stringHashIndex) Read(key interface{}) ([]interface{}, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var indexes []interface{}
-	index, ok := s.indexes[key]
+	index, ok := s.indexes[key.(string)]
 	if !ok {
 		return nil, UnknownIndex
 	}
