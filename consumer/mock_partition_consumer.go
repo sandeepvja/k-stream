@@ -70,6 +70,7 @@ func (m *mockPartitionConsumer) consume(topic string, partition int32, offset Of
 				Partition: msg.Partition,
 				Timestamp: msg.Timestamp,
 				UUID:      uuid.New(),
+				Headers:msg.Headers,
 			}
 
 			//if highWatermark == 0 || highWatermark-1 == msg.Offset {
