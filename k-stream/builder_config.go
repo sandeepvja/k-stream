@@ -193,7 +193,7 @@ func (c *StreamBuilderConfig) String(b *StreamBuilder) string {
 		{"kstream.ApplicationId", fmt.Sprint(c.ApplicationId)},
 		{"kstream.BootstrapServers", strings.Join(c.BootstrapServers, `, `)},
 		{"kstream.ConsumerCount", fmt.Sprint(c.ConsumerCount)},
-		{"kstream.Consumer.AutoCommitInterval", fmt.Sprint(c.Consumer.Config.Consumer.Offsets.CommitInterval)},
+		{"kstream.Consumer.AutoCommitInterval", fmt.Sprint(c.Consumer.Config.Consumer.Offsets.AutoCommit.Interval)},
 		{"kstream.Consumer.OffsetBegin", fmt.Sprint(c.Consumer.Consumer.Offsets.Initial)},
 		{"kstream.Consumer.AsyncProcessing", fmt.Sprint(c.AsyncProcessing)},
 		//{"kstream.Consumer.AutoCommitEnable", fmt.Sprint(c.Consumer.AutoCommitEnable)},
