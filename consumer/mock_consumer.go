@@ -138,6 +138,7 @@ func (m *mockConsumer) consume(partition *mockConsumerPartition) {
 				Partition: msg.Partition,
 				Timestamp: msg.Timestamp,
 				UUID:      uuid.New(),
+				Headers:msg.Headers,
 			}
 		}
 
