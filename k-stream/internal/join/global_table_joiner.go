@@ -122,11 +122,6 @@ func (j *GlobalTableJoiner) Join(ctx context.Context, key interface{}, leftVal i
 
 }
 
-//func (j *GlobalTableJoiner) Process(ctx context.Context, key interface{}, value interface{}) (interface{}, interface{}, error) {
-//	v, err := j.Join(ctx, key, value)
-//	return key, v, err
-//}
-
 func (j *GlobalTableJoiner) Name() string {
 	return j.Store
 }
@@ -134,7 +129,3 @@ func (j *GlobalTableJoiner) Name() string {
 func (j *GlobalTableJoiner) ID() int32 {
 	return j.Id
 }
-
-//func (j *GlobalTableJoiner) JoinType() string {
-//	return `GlobalTableJoiner`
-//}

@@ -26,7 +26,7 @@ var stringEnc = mockSourceBuilder{mockSource{
 func build(source SourceBuilder, nodes []NodeBuilder) (Topology, error) {
 	b := new(TopologyBuilder)
 	b.Source = source
-	b.Builders = nodes
+	b.SourceNodeBuilder = nodes
 	topology, err := b.Build()
 	if err != nil {
 		return Topology{}, err
