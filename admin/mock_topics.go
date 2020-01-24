@@ -174,3 +174,11 @@ func (td *Topics) Topics() map[string]*MockTopic {
 
 	return td.topics
 }
+
+func (t *MockTopic) FetchAll() (records []*data.Record) {
+	rec := make([]*data.Record, 0)
+	for _, v := range t.partitions {
+		rec = append(rec, v.records...)
+	}
+	return rec
+}
