@@ -27,6 +27,7 @@ type registry struct {
 
 type RegistryConfig struct {
 	Host              string
+	HttpEnabled       bool
 	applicationId     string
 	StoreBuilder      Builder
 	StateStoreBuilder StateStoreBuilder
@@ -45,7 +46,9 @@ func NewRegistry(config *RegistryConfig) Registry {
 		storeBuilder:      config.StoreBuilder,
 	}
 
-	MakeEndpoints(config.Host, reg, reg.logger.NewLog(log.Prefixed(`http`)))
+	if config.HttpEnabled {
+		MakeEndpoints(config.Host, reg, reg.logger.NewLog(log.Prefixed(`http`)))
+	}
 
 	return reg
 }

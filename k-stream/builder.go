@@ -87,6 +87,7 @@ func NewStreamBuilder(config *StreamBuilderConfig) *StreamBuilder {
 
 	b.storeRegistry = store.NewRegistry(&store.RegistryConfig{
 		Host:              config.Store.Http.Host,
+		HttpEnabled:       config.Store.Http.Enabled,
 		StoreBuilder:      b.defaultBuilders.Store,
 		StateStoreBuilder: b.defaultBuilders.StateStore,
 		Logger:            config.Logger,

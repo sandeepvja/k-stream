@@ -37,7 +37,8 @@ type StreamBuilderConfig struct {
 			BufferedSize      int
 		}
 		Http struct {
-			Host string
+			Enabled bool
+			Host    string
 		}
 	}
 	DLQ struct {

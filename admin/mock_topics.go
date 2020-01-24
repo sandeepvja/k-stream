@@ -31,6 +31,12 @@ func (p *MockPartition) Latest() int64 {
 	return int64(len(p.records) - 1)
 }
 
+func (p *MockPartition) FetchAll() (records []*data.Record) {
+	p.Lock()
+	defer p.Unlock()
+	return p.records
+}
+
 func (p *MockPartition) Fetch(start int64, limit int) (records []*data.Record, offset int64, err error) {
 	p.Lock()
 	defer p.Unlock()
