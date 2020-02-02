@@ -82,7 +82,7 @@ func NewRocksDb(name string, config *config) (backend.Backend, error) {
 	}
 
 	if err := createDir(config.Dir); err != nil {
-		return nil, errors.WithPrevious(err, `k-stream.backend.Rocksdb`, `cannot create dir`)
+		return nil, errors.WithPrevious(err, `cannot create dir`)
 	}
 
 	l, err := gorocksdb.OpenDb(conf, config.Dir+`/`+name)

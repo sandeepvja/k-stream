@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/pickme-go/k-stream/data"
 	kContext "github.com/pickme-go/k-stream/k-stream/context"
 	"github.com/pickme-go/k-stream/producer"
 )
