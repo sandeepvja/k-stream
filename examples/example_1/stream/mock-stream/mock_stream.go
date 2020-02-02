@@ -10,9 +10,9 @@ import (
 	"github.com/pickme-go/k-stream/examples/example_1/encoders"
 	"github.com/pickme-go/k-stream/examples/example_1/events"
 	"github.com/pickme-go/k-stream/examples/example_1/stream"
-	kstream "github.com/pickme-go/k-stream/k-stream"
+	"github.com/pickme-go/k-stream/k-stream"
 	"github.com/pickme-go/k-stream/k-stream/offsets"
-	"github.com/pickme-go/k-stream/k-stream/task_pool"
+	"github.com/pickme-go/k-stream/k-stream/worker_pool"
 	"github.com/pickme-go/k-stream/producer"
 	"github.com/pickme-go/log/v2"
 	"math/rand"
@@ -64,11 +64,11 @@ func setupMockBuilders() *kstream.StreamBuilder {
 		return prod, nil
 	}
 
-	produceAccountDetails(prod)
-	produceCustomerProfile(prod)
-	go produceAccountCredited(prod)
-	go produceAccountDebited(prod)
-	go consumeMessageAndPrint(topics)
+	//produceAccountDetails(prod)
+	//produceCustomerProfile(prod)
+	//go produceAccountCredited(prod)
+	//go produceAccountDebited(prod)
+	//go consumeMessageAndPrint(topics)
 
 	config.BootstrapServers = []string{`localhost:9092`}
 	config.ApplicationId = `k_stream_example_1`
@@ -83,7 +83,7 @@ func setupMockBuilders() *kstream.StreamBuilder {
 	//config.ChangeLog.ReplicationFactor = 3
 	//config.ChangeLog.MinInSycReplicas = 2
 
-	config.WorkerPool.Order = task_pool.OrderByKey
+	config.WorkerPool.Order = worker_pool.OrderByKey
 	config.WorkerPool.NumOfWorkers = 100
 	config.WorkerPool.WorkerBufferSize = 10
 
@@ -116,7 +116,7 @@ func main() {
 		encoders.CustomerProfileUpdatedEncoder)
 
 	err := builder.Build(stream.InitStreams(builder)...)
-	if err != nil{
+	if err != nil {
 		log.Fatal(`mock build failed`)
 	}
 

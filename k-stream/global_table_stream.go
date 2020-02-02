@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/olekukonko/tablewriter"
+
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/admin"
 	"github.com/pickme-go/k-stream/backend"
@@ -22,6 +23,7 @@ import (
 	"github.com/pickme-go/k-stream/k-stream/store"
 	"github.com/pickme-go/log/v2"
 	"github.com/pickme-go/metrics/v2"
+
 	"strconv"
 	"sync"
 	"time"
@@ -179,7 +181,6 @@ func (t *tableInstance) markOffset(offset int64) error {
 }
 
 func (t *tableInstance) offsetLocal() int64 {
-
 	if !t.store.Backend().Persistent() {
 		return 0
 	}
@@ -334,7 +335,7 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 			t.offsetBackend = offsetBackend
 			t.offsetKey = []byte(t.tp.string())
 			t.store = tables[t.tp.topic].store
-			t.storeWriter = tables[t.tp.topic].options.storeWriter
+			t.storeWriter = tables[t.tp.topic].options.backendWriter
 			t.restartOnFailure = true
 			t.restartOnFailureCount = 1
 			t.consumer = partitionConsumer

@@ -3,7 +3,7 @@ package stream
 import (
 	"github.com/pickme-go/k-stream/examples/example_1/encoders"
 	"github.com/pickme-go/k-stream/k-stream"
-	"github.com/pickme-go/k-stream/k-stream/task_pool"
+	"github.com/pickme-go/k-stream/k-stream/worker_pool"
 	"github.com/pickme-go/log/v2"
 	"github.com/pickme-go/metrics/v2"
 	"os"
@@ -36,7 +36,7 @@ func Init() {
 	//builderConfig.ChangeLog.ReplicationFactor = 3
 	//builderConfig.ChangeLog.MinInSycReplicas = 2
 
-	builderConfig.WorkerPool.Order = task_pool.OrderByKey
+	builderConfig.WorkerPool.Order = worker_pool.OrderByKey
 	builderConfig.WorkerPool.NumOfWorkers = 100
 	builderConfig.WorkerPool.WorkerBufferSize = 10
 

@@ -57,7 +57,7 @@ type mockConsumer struct {
 func NewMockConsumer(topics *admin.Topics) Consumer {
 	return &mockConsumer{
 		topics:         topics,
-		fetchInterval:  1 * time.Microsecond,
+		fetchInterval:  100 * time.Millisecond,
 		fetchBatchSize: 50,
 		wg:             new(sync.WaitGroup),
 	}
@@ -138,7 +138,7 @@ func (m *mockConsumer) consume(partition *mockConsumerPartition) {
 				Partition: msg.Partition,
 				Timestamp: msg.Timestamp,
 				UUID:      uuid.New(),
-				Headers:msg.Headers,
+				Headers:   msg.Headers,
 			}
 		}
 

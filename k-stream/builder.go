@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/admin"
+	"github.com/pickme-go/k-stream/backend"
 	"github.com/pickme-go/k-stream/consumer"
 	"github.com/pickme-go/k-stream/k-stream/changelog"
 	"github.com/pickme-go/k-stream/k-stream/encoding"
@@ -34,27 +35,81 @@ type StreamBuilder struct {
 	logger                  log.Logger
 	metricsReporter         metrics.Reporter
 	defaultBuilders         *DefaultBuilders
-	kafkaAdmin              admin.KafkaAdmin
-	offsetManager           offsets.Manager
 	topicBuilder            *topicBuilder
 	changelogTopics         map[string]*admin.Topic
 	changelogReplicaManager *changelog.ReplicaManager
+}
+
+type BuilderOption func(*DefaultBuilders)
+
+func WithOffsetManager(offsetManager offsets.Manager) BuilderOption {
+	return func(builders *DefaultBuilders) {
+		builders.OffsetManager = offsetManager
+	}
+}
+
+func WithKafkaAdmin(kafkaAdmin admin.KafkaAdmin) BuilderOption {
+	return func(builders *DefaultBuilders) {
+		builders.KafkaAdmin = kafkaAdmin
+	}
+}
+
+func WithConsumerBuilder(builder consumer.Builder) BuilderOption {
+	return func(builders *DefaultBuilders) {
+		builders.Consumer = builder
+	}
+}
+
+func WithPartitionConsumerBuilder(builder consumer.PartitionConsumerBuilder) BuilderOption {
+	return func(builders *DefaultBuilders) {
+		builders.PartitionConsumer = builder
+	}
+}
+
+func WithStoreBuilder(builder store.Builder) BuilderOption {
+	return func(builders *DefaultBuilders) {
+		builders.Store = builder
+	}
+}
+
+func WithStateStoreBuilder(builder store.StateStoreBuilder) BuilderOption {
+	return func(builders *DefaultBuilders) {
+		builders.StateStore = builder
+	}
+}
+
+func WithBackendBuilder(builder backend.Builder) BuilderOption {
+	return func(builders *DefaultBuilders) {
+		builders.Backend = builder
+	}
+}
+
+func WithChangelogBuilder(builder changelog.Builder) BuilderOption {
+	return func(builders *DefaultBuilders) {
+		builders.changelog = builder
+	}
+}
+
+func WithProducerBuilder(builder producer.Builder) BuilderOption {
+	return func(builders *DefaultBuilders) {
+		builders.Producer = builder
+	}
 }
 
 func init() {
 	saramaMetrics.UseNilMetrics = true
 }
 
-func NewStreamBuilder(config *StreamBuilderConfig) *StreamBuilder {
+func NewStreamBuilder(config *StreamBuilderConfig, options ...BuilderOption) *StreamBuilder {
 
 	config.Logger.Info(`
-		 _    _    _
-		| |  / )  | |   _
-		| | / /    \ \ | |_   ____ ____ ____ ____
-		| |< <      \ \|  _) / ___) _  ) _  |    \
-		| | \ \ _____) ) |__| |  ( (/ ( ( | | | | |
-		|_|  \_|______/ \___)_|   \____)_||_|_|_|_|
-		                         𝐆𝐨𝐥𝐚𝐧𝐠 𝐊𝐚𝐟𝐤𝐚 𝐒𝐭𝐫𝐞𝐚𝐦𝐬
+ _    _    _
+| |  / )  | |   _
+| | / /    \ \ | |_   ____ ____ ____ ____
+| |< <      \ \|  _) / ___) _  ) _  |    \
+| | \ \ _____) ) |__| |  ( (/ ( ( | | | | |
+|_|  \_|______/ \___)_|   \____)_||_|_|_|_|
+𝐆𝐨𝐥𝐚𝐧𝐠 𝐊𝐚𝐟𝐤𝐚 𝐒𝐭𝐫𝐞𝐚𝐦𝐬
 
 		`)
 
@@ -71,8 +126,6 @@ func NewStreamBuilder(config *StreamBuilderConfig) *StreamBuilder {
 		metricsReporter: config.MetricsReporter,
 		defaultBuilders: config.DefaultBuilders,
 		graph:           graph.NewGraph(),
-		kafkaAdmin:      config.DefaultBuilders.KafkaAdmin,
-		offsetManager:   config.DefaultBuilders.OffsetManager,
 		topicBuilder: &topicBuilder{
 			topics: make(map[string]*admin.Topic),
 			admin:  config.DefaultBuilders.KafkaAdmin,
@@ -148,10 +201,10 @@ func (b *StreamBuilder) Stream(topic string, keyEncoder encoding.Builder, valEnc
 
 	opts := []Option{
 		withBuilder(b),
-		WithWorkerPool(b.config.WorkerPool),
+		WithWorkerPoolOptions(b.config.WorkerPool),
 		WithConfig(StreamConfigs{
-			//`stream.processor.retry`: 2,
-			//`stream.processor.retry.interval`: 100,
+			`stream.processor.retry`:                             2,
+			`stream.processor.retry.interval`:                    100,
 			`stream.processor.changelog.enabled`:                 b.config.ChangeLog.Enabled,
 			`stream.processor.changelog.topic.name`:              fmt.Sprintf(`%s-%s-changelog`, b.config.ApplicationId, topic),
 			`stream.processor.changelog.topic.minInSyncReplicas`: b.config.ChangeLog.MinInSycReplicas,
@@ -166,12 +219,12 @@ func (b *StreamBuilder) Stream(topic string, keyEncoder encoding.Builder, valEnc
 	return newKStream(func(s string) string { return topic }, keyEncoder, valEncoder, nil, append(opts, options...)...)
 }
 
-func (b *StreamBuilder) GlobalTable(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, store string, options ...globalTableOption) GlobalTable {
+func (b *StreamBuilder) GlobalTable(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, store string, options ...GlobalTableOption) GlobalTable {
 
 	//apply options
 	opts := new(globalTableOptions)
 	opts.initialOffset = GlobalTableOffsetDefault
-	opts.storeWriter = globalTableStoreWriter
+	opts.backendWriter = globalTableStoreWriter
 	for _, o := range options {
 		o(opts)
 	}
@@ -350,7 +403,7 @@ func (b *StreamBuilder) createChangelogTopics() error {
 	}
 
 	// fetch topic info
-	info, err := b.kafkaAdmin.FetchInfo(topics)
+	info, err := b.defaultBuilders.KafkaAdmin.FetchInfo(topics)
 	if err != nil {
 		return err
 	}
@@ -396,7 +449,7 @@ func (b *StreamBuilder) setUpChangelogs() {
 	//setting up chnagelog replica manager
 	if len(replicaTps) > 0 {
 		rep, err := changelog.NewReplicaManager(&changelog.ReplicaManagerConf{
-			OffsetManager: b.offsetManager,
+			OffsetManager: b.defaultBuilders.OffsetManager,
 			Backend:       b.defaultBuilders.Backend,
 			Consumer:      b.defaultBuilders.PartitionConsumer,
 			Tps:           replicaTps,

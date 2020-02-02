@@ -14,11 +14,11 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"github.com/pickme-go/k-stream/backend"
 	"github.com/pickme-go/k-stream/consumer"
-	"github.com/pickme-go/k-stream/k-stream/task_pool"
+	"github.com/pickme-go/k-stream/k-stream/worker_pool"
 	"github.com/pickme-go/k-stream/producer"
+	"github.com/pickme-go/k-stream/util"
 	"github.com/pickme-go/log/v2"
 	"github.com/pickme-go/metrics/v2"
-	"strings"
 	"time"
 )
 
@@ -26,7 +26,7 @@ type StreamBuilderConfig struct {
 	ApplicationId    string
 	AsyncProcessing  bool
 	BootstrapServers []string // kafka Brokers
-	WorkerPool       *task_pool.PoolConfig
+	WorkerPool       *worker_pool.PoolConfig
 	Store            struct {
 		BackendBuilder backend.Builder
 		ChangeLog      struct {
@@ -97,8 +97,8 @@ func NewStreamBuilderConfig() *StreamBuilderConfig {
 	//config.Producer.QueueBufferingMax = 1
 
 	//set default task execution order
-	config.WorkerPool = &task_pool.PoolConfig{
-		Order:            task_pool.OrderByKey,
+	config.WorkerPool = &worker_pool.PoolConfig{
+		Order:            worker_pool.OrderByKey,
 		NumOfWorkers:     100,
 		WorkerBufferSize: 10,
 	}
@@ -190,47 +190,8 @@ func (c *StreamBuilderConfig) validate() {
 }
 
 func (c *StreamBuilderConfig) String(b *StreamBuilder) string {
-	data := [][]string{
-		{"kstream.ApplicationId", fmt.Sprint(c.ApplicationId)},
-		{"kstream.BootstrapServers", strings.Join(c.BootstrapServers, `, `)},
-		{"kstream.ConsumerCount", fmt.Sprint(c.ConsumerCount)},
-		{"kstream.Consumer.AutoCommitInterval", fmt.Sprint(c.Consumer.Config.Consumer.Offsets.AutoCommit.Interval)},
-		{"kstream.Consumer.OffsetBegin", fmt.Sprint(c.Consumer.Consumer.Offsets.Initial)},
-		{"kstream.Consumer.AsyncProcessing", fmt.Sprint(c.AsyncProcessing)},
-		//{"kstream.Consumer.AutoCommitEnable", fmt.Sprint(c.Consumer.AutoCommitEnable)},
-		{"kstream.Consumer.ClientId", fmt.Sprint(c.ApplicationId)},
-		{"kstream.Consumer.EventChannelSize", fmt.Sprint(c.Consumer.ChannelBufferSize)},
-		{"kstream.Consumer.groupId", fmt.Sprint(c.ApplicationId)},
-		{"kstream.Consumer.BootstrapServers", fmt.Sprint(c.BootstrapServers)},
-		{"kstream.Consumer.FetchErrorBackOffMs", fmt.Sprint(c.Consumer.Consumer.Fetch.Default)},
-		//{"kstream.Consumer.FetchMinBytes", fmt.Sprint(c.Consumer.FetchMinBytes)},
-		//{"kstream.Consumer.FetchWaitMaxMs", fmt.Sprint(c.Consumer.FetchWaitMaxMs)},
-		//{"kstream.Consumer.HeartbeatIntervalMs", fmt.Sprint(c.Consumer.HeartbeatIntervalMs)},
-		//{"kstream.Consumer.SessionTimeoutMs", fmt.Sprint(c.Consumer.SessionTimeoutMs)},
-		//{"kstream.Consumer.MetadataMaxAgeMs", fmt.Sprint(c.Consumer.MetadataMaxAgeMs)},
-		{``, ``},
-		{"kstream.WorkerPool.NumOfWorkers (Per Partition)", fmt.Sprint(c.WorkerPool.NumOfWorkers)},
-		{"kstream.WorkerPool.WorkerBufferSize (Per Partition)", fmt.Sprint(c.WorkerPool.WorkerBufferSize)},
-		{"kstream.WorkerPool.Order", fmt.Sprint(c.WorkerPool.Order)},
-		{``, ``},
-		{"kstream.Producer.NumOfWorkers", fmt.Sprint(c.Producer.Pool.NumOfWorkers)},
-		//{"kstream.Producer.Idempotent", fmt.Sprint(c.Producer.Idempotent)},
-		//{"kstream.Producer.BatchNumMessages", fmt.Sprint(c.Producer.BatchNumMessages)},
-		//{"kstream.Producer.QueueBufferingMax", fmt.Sprint(c.Producer.QueueBufferingMax)},
-		{"kstream.Producer.RequiredAcks", fmt.Sprint(c.Producer.RequiredAcks)},
-		//{"kstream.Producer.Retry", fmt.Sprint(c.Producer.Retry)},
-		//{"kstream.Producer.RetryMax", fmt.Sprint(c.Producer.RetryBackOff)},
-		{``, ``},
-		{"kstream.ChangeLog.Buffered.Enabled", fmt.Sprint(c.ChangeLog.Buffer.Enabled)},
-		{"kstream.ChangeLog.BufferedSize", fmt.Sprint(c.ChangeLog.Buffer.Size)},
-		{"kstream.ChangeLog.BufferedFlush", c.ChangeLog.Buffer.FlushInterval.String()},
-		{"kstream.ChangeLog.MinInSycReplicas", fmt.Sprint(c.ChangeLog.MinInSycReplicas)},
-		{"kstream.ChangeLog.ReplicationFactor", fmt.Sprint(c.ChangeLog.ReplicationFactor)},
-		{"kstream.ChangeLog.Replicated", fmt.Sprint(c.ChangeLog.Replicated)},
-		{"kstream.ChangeLog.Suffix", fmt.Sprint(c.ChangeLog.Suffix)},
-		{``, ``},
-		{"kstream.Store.Http.Host", fmt.Sprint(c.Store.Http.Host)},
-	}
+
+	data := util.StrToMap(`kStream`, c)
 
 	data = append(data, []string{``})
 	data = append(data, []string{`Stream configs`, ``})

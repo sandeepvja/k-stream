@@ -137,7 +137,7 @@ func (ins *Instances) Start() (err error) {
 			ConsumerBuilder: ins.builder.defaultBuilders.PartitionConsumer,
 			Logger:          ins.logger,
 			KafkaAdmin:      ins.builder.defaultBuilders.KafkaAdmin,
-			OffsetManager:   ins.builder.offsetManager,
+			OffsetManager:   ins.builder.defaultBuilders.OffsetManager,
 			Metrics:         ins.metricsReporter,
 			BackendBuilder:  ins.builder.defaultBuilders.Backend,
 		})
@@ -293,7 +293,6 @@ func (s *StreamInstance) Start(wg *sync.WaitGroup) error {
 
 			go func(processor *processor) {
 				for record := range processor.changelogMarks {
-					println(`done`)
 					if err := p.CommitOffset(record); err != nil {
 						s.logger.Error(fmt.Sprintf("cannot commit partition offset due to : %+v", err))
 					}

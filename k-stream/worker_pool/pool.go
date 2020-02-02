@@ -1,4 +1,4 @@
-package task_pool
+package worker_pool
 
 import (
 	"context"
@@ -20,17 +20,17 @@ const (
 )
 
 func (eo ExecutionOrder) String() string {
-	o := `OrderRandom`
+	order := `OrderRandom`
 
 	if eo == OrderByKey {
-		o = `OrderByKey`
+		return `OrderByKey`
 	}
 
 	if eo == OrderPreserved {
-		o = `OrderPreserved`
+		return `OrderPreserved`
 	}
 
-	return o
+	return order
 }
 
 type task struct {
@@ -58,7 +58,6 @@ type Pool struct {
 }
 
 func NewPool(id string, t *node.TopologyBuilder, metricsReporter metrics.Reporter, logger log.Logger, config *PoolConfig) *Pool {
-
 	p := &Pool{
 		id:       id,
 		topology: t,
@@ -76,7 +75,6 @@ func NewPool(id string, t *node.TopologyBuilder, metricsReporter metrics.Reporte
 	})
 
 	for i := int64(config.NumOfWorkers) - 1; i >= 0; i-- {
-
 		topology, err := t.Build()
 		if err != nil {
 			p.logger.Fatal(`k-stream.streamProcessor`, err)
@@ -101,7 +99,6 @@ func NewPool(id string, t *node.TopologyBuilder, metricsReporter metrics.Reporte
 }
 
 func (p *Pool) Run(ctx context.Context, key, val []byte, doneClb func()) {
-
 	w, err := p.worker(key)
 	if err != nil {
 		p.logger.ErrorContext(ctx, `k-stream.task_pool`, err)
@@ -160,7 +157,6 @@ type worker struct {
 }
 
 func (w *worker) start() {
-
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
@@ -171,7 +167,6 @@ func (w *worker) start() {
 	}()
 
 	for task := range w.tasks {
-		//continue
 		_, _, err := w.topology.Run(task.ctx, task.key, task.val)
 		if err != nil {
 			w.logger.ErrorContext(task.ctx, `k-stream.task_pool`, err)

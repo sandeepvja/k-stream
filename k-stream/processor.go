@@ -16,7 +16,7 @@ import (
 	"github.com/pickme-go/k-stream/k-stream/changelog"
 	kContext "github.com/pickme-go/k-stream/k-stream/context"
 	"github.com/pickme-go/k-stream/k-stream/internal/node"
-	"github.com/pickme-go/k-stream/k-stream/task_pool"
+	"github.com/pickme-go/k-stream/k-stream/worker_pool"
 	"github.com/pickme-go/log/v2"
 	"github.com/pickme-go/metrics/v2"
 	"github.com/pickme-go/traceable-context"
@@ -34,8 +34,8 @@ type processor struct {
 	context          context.Context
 	cancel           context.CancelFunc
 	changelogMarks   chan *data.Record
-	taskPoolConfig   *task_pool.PoolConfig
-	taskPool         *task_pool.Pool
+	taskPoolConfig   *worker_pool.PoolConfig
+	taskPool         *worker_pool.Pool
 	logger           log.Logger
 	metricsReporter  metrics.Reporter
 	metrics          struct {
@@ -69,7 +69,7 @@ func newProcessor(id string, tp consumer.TopicPartition, changelog changelog.Bui
 func (p *processor) boot() error {
 	defer p.logger.Info(`processor booted`)
 
-	p.taskPool = task_pool.NewPool(
+	p.taskPool = worker_pool.NewPool(
 		p.topicPartition.String(),
 		p.topologyBuilder,
 		p.metricsReporter,
@@ -116,10 +116,9 @@ func (p *processor) start() {
 func (p *processor) process(record *data.Record) {
 
 	ctx := p.createContext(record)
-
 	// if message processing method is sync changelog marking is not necessary
 	begin := time.Now()
-	if p.taskPoolConfig.Order == task_pool.OrderPreserved {
+	if p.taskPoolConfig.Order == worker_pool.OrderPreserved {
 		p.taskPool.Run(ctx, record.Key, record.Value, func() {
 			p.metrics.processedLatency.Observe(float64(time.Since(begin).Nanoseconds()/1e3), map[string]string{
 				`topic`:     p.topicPartition.Topic,

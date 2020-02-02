@@ -44,7 +44,7 @@ var testStore = store.NewMockStore(
 	rightRecord{},
 	backend.NewMockBackend(`test_backend`, 0))
 
-func makeJoiner(typ JoinType) *GlobalTableJoiner {
+func makeJoiner(typ Type) *GlobalTableJoiner {
 	return &GlobalTableJoiner{
 		store: testStore,
 		KeyMapper: func(key interface{}, value interface{}) (mappedKey interface{}, err error) {

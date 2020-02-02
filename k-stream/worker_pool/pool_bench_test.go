@@ -1,10 +1,8 @@
-package task_pool
+package worker_pool
 
 import (
 	"context"
 	"fmt"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
-	"github.com/pickme-go/metrics/v2"
 	"math/rand"
 	"testing"
 )
@@ -13,21 +11,21 @@ var pOrdered *Pool
 var pRandom *Pool
 
 func init() {
-	builder := node.NewMockTopologyBuilder(10, 10)
-
-	pl := NewPool(`1`, builder, metrics.NoopReporter(), &PoolConfig{
-		NumOfWorkers:     1000,
-		Order:            OrderByKey,
-		WorkerBufferSize: 10000,
-	})
-	pOrdered = pl
-
-	plRd := NewPool(`2`, builder, metrics.NoopReporter(), &PoolConfig{
-		NumOfWorkers:     1000,
-		Order:            OrderRandom,
-		WorkerBufferSize: 10000,
-	})
-	pRandom = plRd
+	//builder := node.NewMockTopologyBuilder(10, 10)
+	//
+	//pl := NewPool(`1`, builder, metrics.NoopReporter(), &PoolConfig{
+	//	NumOfWorkers:     1000,
+	//	Order:            OrderByKey,
+	//	WorkerBufferSize: 10000,
+	//})
+	//pOrdered = pl
+	//
+	//plRd := NewPool(`2`, builder, metrics.NoopReporter(), &PoolConfig{
+	//	NumOfWorkers:     1000,
+	//	Order:            OrderRandom,
+	//	WorkerBufferSize: 10000,
+	//})
+	//pRandom = plRd
 }
 
 func BenchmarkPool_Run_Random(b *testing.B) {

@@ -35,6 +35,6 @@ func (j *GlobalTableJoiner) Name() string {
 	return j.Store
 }
 
-func (j *GlobalTableJoiner) JoinType() string {
+func (j *GlobalTableJoiner) Type() string {
 	return `GlobalTableJoiner`
 }*/

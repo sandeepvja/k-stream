@@ -25,7 +25,7 @@ type DefaultBuilders struct {
 	configs           *StreamBuilderConfig
 }
 
-func (dbs *DefaultBuilders) build() {
+func (dbs *DefaultBuilders) build(options ...BuilderOption) {
 	// default backend builder will be memory
 	if dbs.configs.Store.BackendBuilder == nil {
 		backendBuilderConfig := memory.NewConfig()
@@ -79,11 +79,10 @@ func (dbs *DefaultBuilders) build() {
 	}
 
 	if dbs.KafkaAdmin == nil {
-		dbs.KafkaAdmin = admin.NewKafkaAdmin(&admin.KafkaAdminConfig{
-			BootstrapServers: dbs.configs.BootstrapServers,
-			KafkaVersion:     dbs.configs.Consumer.Version,
-			Logger:           dbs.configs.Logger,
-		})
+		dbs.KafkaAdmin = admin.NewKafkaAdmin(dbs.configs.BootstrapServers,
+			admin.WithKafkaVersion(dbs.configs.Consumer.Version),
+			admin.WithLogger(dbs.configs.Logger),
+		)
 	}
 
 	if dbs.PartitionConsumer == nil {
@@ -92,4 +91,9 @@ func (dbs *DefaultBuilders) build() {
 	dbs.PartitionConsumer.Config().BootstrapServers = dbs.configs.BootstrapServers
 	dbs.PartitionConsumer.Config().MetricsReporter = dbs.configs.MetricsReporter
 	dbs.PartitionConsumer.Config().Logger = dbs.configs.Logger
+
+	// apply options
+	for _, option := range options {
+		option(dbs)
+	}
 }

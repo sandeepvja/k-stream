@@ -11,7 +11,7 @@ import (
 type GlobalTableJoiner struct {
 	//Topic string
 	Id            int32
-	Typ           JoinType
+	Typ           Type
 	Store         string
 	KeyMapper     KeyMapper
 	ValueMapper   ValueMapper

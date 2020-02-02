@@ -21,7 +21,13 @@ type GlobalTableOffset int
 // table will start syncing from locally stored offset or topic oldest offset
 const GlobalTableOffsetDefault GlobalTableOffset = 0
 
+// table will start syncing from topic latest offset
+// suitable for stream topics since the topic can contains historical data
+const GlobalTableOffsetLatest GlobalTableOffset = -1
+
+// globalTableStoreWriter overrides the persisting logic for GlobalTables
 var globalTableStoreWriter = func(r *data.Record, store store.Store) error {
+	// tombstone handling
 	if r.Value == nil {
 		if err := store.Backend().Delete(r.Key); err != nil {
 			return err
@@ -31,33 +37,30 @@ var globalTableStoreWriter = func(r *data.Record, store store.Store) error {
 	return store.Backend().Set(r.Key, r.Value, 0)
 }
 
-// table will start syncing from topic latest offset (suitable for stream topics since the topic can contains historical
-// data )
-const GlobalTableOffsetLatest GlobalTableOffset = -1
-
 type globalTableOptions struct {
 	initialOffset GlobalTableOffset
 	logger        log.Logger
-	storeWriter   StoreWriter
+	backendWriter StoreWriter
 }
 
-type globalTableOption func(options *globalTableOptions)
+type GlobalTableOption func(options *globalTableOptions)
 
-func GlobalTableWithOffset(offset GlobalTableOffset) globalTableOption {
+// GlobalTableWithOffset offset overides the
+func GlobalTableWithOffset(offset GlobalTableOffset) GlobalTableOption {
 	return func(options *globalTableOptions) {
 		options.initialOffset = offset
 	}
 }
 
-func GlobalTableWithLogger(logger log.Logger) globalTableOption {
+func GlobalTableWithLogger(logger log.Logger) GlobalTableOption {
 	return func(options *globalTableOptions) {
 		options.logger = logger
 	}
 }
 
-func GlobalTableWithBackendWriter(writer StoreWriter) globalTableOption {
+func GlobalTableWithBackendWriter(writer StoreWriter) GlobalTableOption {
 	return func(options *globalTableOptions) {
-		options.storeWriter = writer
+		options.backendWriter = writer
 	}
 }
 

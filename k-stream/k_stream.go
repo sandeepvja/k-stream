@@ -16,7 +16,7 @@ import (
 	"github.com/pickme-go/k-stream/k-stream/internal/join"
 	"github.com/pickme-go/k-stream/k-stream/internal/node"
 	"github.com/pickme-go/k-stream/k-stream/processors"
-	"github.com/pickme-go/k-stream/k-stream/task_pool"
+	"github.com/pickme-go/k-stream/k-stream/worker_pool"
 	"log"
 	"sync/atomic"
 
@@ -29,7 +29,7 @@ var nodeCounter int32
 type topic func(string) string
 
 const (
-	LeftJoin join.JoinType = iota
+	LeftJoin join.Type = iota
 	InnerJoin
 )
 
@@ -40,7 +40,7 @@ type Stream interface {
 	Transform(transformer processors.TransFunc) Stream
 	Filter(filter processors.FilterFunc) Stream
 	Process(processor processors.ProcessFunc) Stream
-	JoinGlobalTable(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper, typ join.JoinType) Stream
+	JoinGlobalTable(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper, typ join.Type) Stream
 	JoinKTable(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper) Stream
 	JoinStream(stream Stream, valMapper join.ValueMapper, opts ...RepartitionOption) Stream
 	//LeftJoin(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper) Stream
@@ -50,13 +50,13 @@ type Stream interface {
 
 type StreamConfigs map[string]interface{}
 
-type kStreamConfig struct {
+type kStreamOptions struct {
 	processorRetryCount    int
 	processorRetryInterval time.Duration
 	dlq                    bool
 	logger                 log.Logger
 	builder                *StreamBuilder
-	workerPool             *task_pool.PoolConfig
+	workerPool             *worker_pool.PoolConfig
 	changelog              struct {
 		topic            *admin.Topic
 		enabled          bool
@@ -77,7 +77,7 @@ type kStream struct {
 	source      *kSourceBuilder
 	topology    *node.TopologyBuilder
 	root        bool
-	config      *kStreamConfig
+	config      *kStreamOptions
 	streams     []*kStream
 	NodeBuilder node.NodeBuilder
 	Node        node.Node
@@ -85,7 +85,7 @@ type kStream struct {
 	topic       topic
 }
 
-func (c *kStreamConfig) apply(options ...Option) {
+func (c *kStreamOptions) apply(options ...Option) {
 
 	// apply defaults
 	c.processorRetryCount = 1
@@ -104,16 +104,16 @@ func (c *kStreamConfig) apply(options ...Option) {
 	}
 }
 
-type Option func(*kStreamConfig)
+type Option func(*kStreamOptions)
 
-func WithWorkerPool(poolConfig *task_pool.PoolConfig) Option {
-	return func(config *kStreamConfig) {
+func WithWorkerPoolOptions(poolConfig *worker_pool.PoolConfig) Option {
+	return func(config *kStreamOptions) {
 		config.workerPool = poolConfig
 	}
 }
 
 func WithConfig(configs StreamConfigs) Option {
-	return func(stream *kStreamConfig) {
+	return func(stream *kStreamOptions) {
 		for p, value := range configs {
 
 			switch p {
@@ -201,20 +201,20 @@ func WithConfig(configs StreamConfigs) Option {
 }
 
 func WithLogger(logger log.Logger) Option {
-	return func(config *kStreamConfig) {
+	return func(config *kStreamOptions) {
 		config.logger = logger
 	}
 }
 
 func withBuilder(builder *StreamBuilder) Option {
-	return func(config *kStreamConfig) {
+	return func(config *kStreamOptions) {
 		config.builder = builder
 	}
 }
 
 func newKStream(topic topic, keyEncoder encoding.Builder, valEncoder encoding.Builder, parent *kStream, options ...Option) *kStream {
 
-	config := new(kStreamConfig)
+	config := new(kStreamOptions)
 	config.apply(options...)
 
 	stream := &kStream{
@@ -357,7 +357,7 @@ func (s *kStream) Filter(filter processors.FilterFunc) Stream {
 	return filtered
 }
 
-func (s *kStream) JoinGlobalTable(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper, typ join.JoinType) Stream {
+func (s *kStream) JoinGlobalTable(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper, typ join.Type) Stream {
 	joinStream, ok := stream.(*globalKTable)
 	if !ok {
 		log.Fatal(`k-stream.kStream`,

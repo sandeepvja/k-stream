@@ -22,7 +22,7 @@ type mockPartitionConsumer struct {
 func NewMockPartitionConsumer(topics *admin.Topics, offsets offsets.Manager) PartitionConsumer {
 	return &mockPartitionConsumer{
 		topics:         topics,
-		fetchInterval:  1 * time.Millisecond,
+		fetchInterval:  100 * time.Millisecond,
 		fetchBatchSize: 4,
 		closed:         make(chan bool, 1),
 		offsets:        offsets,
@@ -70,7 +70,7 @@ func (m *mockPartitionConsumer) consume(topic string, partition int32, offset Of
 				Partition: msg.Partition,
 				Timestamp: msg.Timestamp,
 				UUID:      uuid.New(),
-				Headers:msg.Headers,
+				Headers:   msg.Headers,
 			}
 
 			//if highWatermark == 0 || highWatermark-1 == msg.Offset {

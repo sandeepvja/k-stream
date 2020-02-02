@@ -5,6 +5,7 @@
  *    Gayan Yapa (gayan@pickme.lk)
  */
 
+// Package admin provides an interface for kafka administrative operations
 package admin
 
 import (
@@ -29,6 +30,7 @@ type Topic struct {
 	ConfigEntries     map[string]string
 }
 
+// KafkaAdmin
 type KafkaAdmin interface {
 	FetchInfo(topics []string) (map[string]*Topic, error)
 	CreateTopics(topics map[string]*Topic) error
@@ -36,10 +38,32 @@ type KafkaAdmin interface {
 	Close()
 }
 
-type KafkaAdminConfig struct {
+type kafkaAdminOptions struct {
 	BootstrapServers []string
 	KafkaVersion     sarama.KafkaVersion
 	Logger           log.Logger
+}
+
+func (opts *kafkaAdminOptions) apply(options ...KafkaAdminOption) {
+	opts.KafkaVersion = sarama.V2_4_0_0
+	opts.Logger = log.NewNoopLogger()
+	for _, opt := range options {
+		opt(opts)
+	}
+}
+
+type KafkaAdminOption func(*kafkaAdminOptions)
+
+func WithKafkaVersion(version sarama.KafkaVersion) KafkaAdminOption {
+	return func(options *kafkaAdminOptions) {
+		options.KafkaVersion = version
+	}
+}
+
+func WithLogger(logger log.Logger) KafkaAdminOption {
+	return func(options *kafkaAdminOptions) {
+		options.Logger = logger
+	}
 }
 
 type kafkaAdmin struct {
@@ -47,11 +71,13 @@ type kafkaAdmin struct {
 	logger log.Logger
 }
 
-func NewKafkaAdmin(config *KafkaAdminConfig) *kafkaAdmin {
+func NewKafkaAdmin(bootstrapServer []string, options ...KafkaAdminOption) *kafkaAdmin {
+	opts := new(kafkaAdminOptions)
+	opts.apply(options...)
 	saramaConfig := sarama.NewConfig()
-	saramaConfig.Version = config.KafkaVersion
-	logger := config.Logger.NewLog(log.Prefixed(`kafka-admin`))
-	admin, err := sarama.NewClusterAdmin(config.BootstrapServers, saramaConfig)
+	saramaConfig.Version = opts.KafkaVersion
+	logger := opts.Logger.NewLog(log.Prefixed(`kafka-admin`))
+	admin, err := sarama.NewClusterAdmin(bootstrapServer, saramaConfig)
 	if err != nil {
 		logger.Fatal(fmt.Sprintf(`cannot get controller - %+v`, err))
 	}
