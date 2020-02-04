@@ -77,6 +77,9 @@ func NewStreamBuilderConfig() *StreamBuilderConfig {
 	config.Producer = producer.NewConfig()
 	config.Consumer = consumer.NewConsumerConfig()
 	config.Config = sarama.NewConfig()
+	config.Version = sarama.V2_4_0_0
+	config.Producer.Version = sarama.V2_4_0_0
+	config.Consumer.Version = sarama.V2_4_0_0
 
 	config.ConsumerCount = 1
 

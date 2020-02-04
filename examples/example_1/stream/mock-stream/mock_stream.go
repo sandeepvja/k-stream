@@ -56,19 +56,12 @@ func setupMockBuilders() *kstream.StreamBuilder {
 	prod := producer.NewMockProducer(topics)
 
 	offsetManager := &offsets.MockManager{Topics: topics}
-	config.DefaultBuilders.PartitionConsumer = consumer.NewMockPartitionConsumerBuilder(topics, offsetManager)
-	config.DefaultBuilders.OffsetManager = offsetManager
-	config.DefaultBuilders.KafkaAdmin = kafkaAdmin
-	config.DefaultBuilders.Consumer = consumer.NewMockConsumerBuilder(topics)
-	config.DefaultBuilders.Producer = func(configs *producer.Config) (i producer.Producer, e error) {
-		return prod, nil
-	}
 
-	//produceAccountDetails(prod)
-	//produceCustomerProfile(prod)
-	//go produceAccountCredited(prod)
-	//go produceAccountDebited(prod)
-	//go consumeMessageAndPrint(topics)
+	produceAccountDetails(prod)
+	produceCustomerProfile(prod)
+	go produceAccountCredited(prod)
+	go produceAccountDebited(prod)
+	go consumeMessageAndPrint(topics)
 
 	config.BootstrapServers = []string{`localhost:9092`}
 	config.ApplicationId = `k_stream_example_1`
@@ -92,7 +85,15 @@ func setupMockBuilders() *kstream.StreamBuilder {
 		log.WithColors(true),
 	).Log()
 
-	return kstream.NewStreamBuilder(config)
+	return kstream.NewStreamBuilder(config,
+		kstream.WithPartitionConsumerBuilder(consumer.NewMockPartitionConsumerBuilder(topics, offsetManager)),
+		kstream.WithConsumerBuilder(consumer.NewMockConsumerBuilder(topics)),
+		kstream.WithOffsetManager(offsetManager),
+		kstream.WithKafkaAdmin(kafkaAdmin),
+		kstream.WithProducerBuilder(func(configs *producer.Config) (i producer.Producer, e error) {
+			return prod, nil
+		}),
+	)
 }
 
 func main() {

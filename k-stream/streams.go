@@ -141,7 +141,7 @@ func (ins *Instances) Start() (err error) {
 			Metrics:         ins.metricsReporter,
 			BackendBuilder:  ins.builder.defaultBuilders.Backend,
 		})
-		ins.globalTableStream.startStreams(wg)
+		ins.globalTableStream.StartStreams(wg)
 
 		if len(ins.streams) < 1 {
 			if ins.options.notifyOnSynced != nil {
@@ -172,9 +172,10 @@ func (ins *Instances) Start() (err error) {
 	return nil
 }
 
+// Stop stops all the running Streams Instances and then GlobalTables
 func (ins *Instances) Stop() {
-
 	if len(ins.streams) > 0 {
+		// stop all the streams first
 		wg := &sync.WaitGroup{}
 		for _, instance := range ins.streams {
 			wg.Add(1)
@@ -186,6 +187,7 @@ func (ins *Instances) Stop() {
 		wg.Wait()
 	}
 
+	// stop running global tables
 	if len(ins.globalTables) > 0 {
 		ins.globalTableStream.stop()
 	}

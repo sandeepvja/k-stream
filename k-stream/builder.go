@@ -115,7 +115,7 @@ func NewStreamBuilder(config *StreamBuilderConfig, options ...BuilderOption) *St
 
 	config.validate()
 
-	config.DefaultBuilders.build()
+	config.DefaultBuilders.build(options...)
 
 	b := &StreamBuilder{
 		config:          config,

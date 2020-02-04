@@ -17,7 +17,7 @@ import (
 	"github.com/pickme-go/k-stream/k-stream/internal/node"
 	"github.com/pickme-go/k-stream/k-stream/processors"
 	"github.com/pickme-go/k-stream/k-stream/worker_pool"
-	"log"
+	"github.com/pickme-go/log/v2"
 	"sync/atomic"
 
 	//"sync/atomic"

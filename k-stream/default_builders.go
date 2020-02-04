@@ -26,6 +26,11 @@ type DefaultBuilders struct {
 }
 
 func (dbs *DefaultBuilders) build(options ...BuilderOption) {
+	// apply options
+	for _, option := range options {
+		option(dbs)
+	}
+
 	// default backend builder will be memory
 	if dbs.configs.Store.BackendBuilder == nil {
 		backendBuilderConfig := memory.NewConfig()
@@ -92,8 +97,4 @@ func (dbs *DefaultBuilders) build(options ...BuilderOption) {
 	dbs.PartitionConsumer.Config().MetricsReporter = dbs.configs.MetricsReporter
 	dbs.PartitionConsumer.Config().Logger = dbs.configs.Logger
 
-	// apply options
-	for _, option := range options {
-		option(dbs)
-	}
 }

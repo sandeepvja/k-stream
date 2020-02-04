@@ -16,16 +16,17 @@ import (
 	"github.com/pickme-go/log/v2"
 )
 
+// Starting offset for the global table partition.
 type GlobalTableOffset int
 
-// table will start syncing from locally stored offset or topic oldest offset
+// GlobalTableOffsetDefault defines the starting offset for the GlobalTable when GlobalTable stream syncing started.
 const GlobalTableOffsetDefault GlobalTableOffset = 0
 
-// table will start syncing from topic latest offset
-// suitable for stream topics since the topic can contains historical data
+// GlobalTableOffsetLatest defines the beginning of the partition.
+// suitable for stream topics since the topic can contains historical data.
 const GlobalTableOffsetLatest GlobalTableOffset = -1
 
-// globalTableStoreWriter overrides the persisting logic for GlobalTables
+// globalTableStoreWriter overrides the persisting logic for GlobalTables.
 var globalTableStoreWriter = func(r *data.Record, store store.Store) error {
 	// tombstone handling
 	if r.Value == nil {
@@ -45,19 +46,32 @@ type globalTableOptions struct {
 
 type GlobalTableOption func(options *globalTableOptions)
 
-// GlobalTableWithOffset offset overides the
+// GlobalTableWithOffset overrides the default starting offset when GlobalTable syncing started.
 func GlobalTableWithOffset(offset GlobalTableOffset) GlobalTableOption {
 	return func(options *globalTableOptions) {
 		options.initialOffset = offset
 	}
 }
 
+// GlobalTableWithLogger overrides the default logger for the GlobalTable (default is NoopLogger).
 func GlobalTableWithLogger(logger log.Logger) GlobalTableOption {
 	return func(options *globalTableOptions) {
 		options.logger = logger
 	}
 }
 
+// GlobalTableWithBackendWriter overrides the persisting behavior of the GlobalTable.
+// eg :
+//	func(r *data.Record, store store.Store) error {
+//		// tombstone handling
+//		if r.Value == nil {
+//			if err := store.Backend().Delete(r.Key); err != nil {
+//				return err
+//			}
+//		}
+//
+//		return store.Backend().Set(r.Key, r.Value, 0)
+//	}
 func GlobalTableWithBackendWriter(writer StoreWriter) GlobalTableOption {
 	return func(options *globalTableOptions) {
 		options.backendWriter = writer
