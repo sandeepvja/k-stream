@@ -2,7 +2,8 @@ package worker_pool
 
 import (
 	"context"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"fmt"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 	"github.com/pickme-go/log/v2"
 	"github.com/pickme-go/metrics/v2"
 	"hash"
@@ -48,7 +49,7 @@ type PoolConfig struct {
 
 type Pool struct {
 	id       string
-	topology *node.TopologyBuilder
+	topology *topology.TopologyBuilder
 	size     int64
 	workers  []*worker
 	logger   log.Logger
@@ -57,10 +58,10 @@ type Pool struct {
 	hasher   hash.Hash32
 }
 
-func NewPool(id string, t *node.TopologyBuilder, metricsReporter metrics.Reporter, logger log.Logger, config *PoolConfig) *Pool {
+func NewPool(id string, tb *topology.TopologyBuilder, metricsReporter metrics.Reporter, logger log.Logger, config *PoolConfig) *Pool {
 	p := &Pool{
 		id:       id,
-		topology: t,
+		topology: tb,
 		size:     int64(config.NumOfWorkers),
 		order:    config.Order,
 		logger:   logger.NewLog(log.Prefixed(`pool`)),
@@ -75,15 +76,15 @@ func NewPool(id string, t *node.TopologyBuilder, metricsReporter metrics.Reporte
 	})
 
 	for i := int64(config.NumOfWorkers) - 1; i >= 0; i-- {
-		topology, err := t.Build()
+		t, err := tb.Build()
 		if err != nil {
 			p.logger.Fatal(`k-stream.streamProcessor`, err)
 		}
 
 		w := &worker{
-			topology:    topology,
+			topology:    t,
 			pool:        p,
-			logger:      p.logger,
+			logger:      p.logger.NewLog(log.Prefixed(fmt.Sprintf(`worker-%d`, i))),
 			tasks:       make(chan task, config.WorkerBufferSize),
 			bufferUsage: bufferUsage,
 		}
@@ -149,7 +150,7 @@ func (p *Pool) worker(key []byte) (*worker, error) {
 }
 
 type worker struct {
-	topology    node.Topology
+	topology    topology.Topology
 	tasks       chan task
 	pool        *Pool
 	logger      log.Logger

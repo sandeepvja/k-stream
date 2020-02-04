@@ -3,7 +3,7 @@ package join
 import (
 	"context"
 	"github.com/pickme-go/errors"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 )
 
 type SideJoiner struct {
@@ -12,12 +12,12 @@ type SideJoiner struct {
 	LeftWindow    *Window
 	RightWindow   *Window
 	ValueMapper   ValueMapper
-	childs        []node.Node
-	childBuilders []node.NodeBuilder
+	childs        []topology.Node
+	childBuilders []topology.NodeBuilder
 }
 
-func (sj *SideJoiner) Build() (node.Node, error) {
-	var childs []node.Node
+func (sj *SideJoiner) Build() (topology.Node, error) {
+	var childs []topology.Node
 	//var childBuilders []node.NodeBuilder
 
 	for _, childBuilder := range sj.childBuilders {
@@ -39,11 +39,11 @@ func (sj *SideJoiner) Build() (node.Node, error) {
 	}, nil
 }
 
-func (sj *SideJoiner) ChildBuilders() []node.NodeBuilder {
+func (sj *SideJoiner) ChildBuilders() []topology.NodeBuilder {
 	return sj.childBuilders
 }
 
-func (sj *SideJoiner) AddChildBuilder(builder node.NodeBuilder) {
+func (sj *SideJoiner) AddChildBuilder(builder topology.NodeBuilder) {
 	sj.childBuilders = append(sj.childBuilders, builder)
 }
 
@@ -92,15 +92,15 @@ func (sj *SideJoiner) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut
 	return kIn, joinedValue, true, nil
 }
 
-func (sj *SideJoiner) Type() node.Type {
-	return node.Type(sj.Side + `_side_joiner`)
+func (sj *SideJoiner) Type() topology.Type {
+	return topology.Type(sj.Side + `_side_joiner`)
 }
 
-func (sj *SideJoiner) Childs() []node.Node {
+func (sj *SideJoiner) Childs() []topology.Node {
 	return sj.childs
 }
 
-func (sj *SideJoiner) AddChild(node node.Node) {
+func (sj *SideJoiner) AddChild(node topology.Node) {
 	sj.childs = append(sj.childs, node)
 }
 

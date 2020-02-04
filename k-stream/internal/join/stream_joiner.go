@@ -2,17 +2,17 @@ package join
 
 import (
 	"context"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 )
 
 type StreamJoiner struct {
 	Id            int32
-	childs        []node.Node
-	childBuilders []node.NodeBuilder
+	childs        []topology.Node
+	childBuilders []topology.NodeBuilder
 }
 
-func (j *StreamJoiner) Build() (node.Node, error) {
-	var childs []node.Node
+func (j *StreamJoiner) Build() (topology.Node, error) {
+	var childs []topology.Node
 	//var childBuilders []node.NodeBuilder
 
 	for _, childBuilder := range j.childBuilders {
@@ -30,11 +30,11 @@ func (j *StreamJoiner) Build() (node.Node, error) {
 	}, nil
 }
 
-func (j *StreamJoiner) ChildBuilders() []node.NodeBuilder {
+func (j *StreamJoiner) ChildBuilders() []topology.NodeBuilder {
 	return j.childBuilders
 }
 
-func (j *StreamJoiner) AddChildBuilder(builder node.NodeBuilder) {
+func (j *StreamJoiner) AddChildBuilder(builder topology.NodeBuilder) {
 	j.childBuilders = append(j.childBuilders, builder)
 }
 
@@ -48,11 +48,11 @@ func (j *StreamJoiner) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOu
 	return kIn, vIn, true, nil
 }
 
-func (j *StreamJoiner) Childs() []node.Node {
+func (j *StreamJoiner) Childs() []topology.Node {
 	return j.childs
 }
 
-func (j *StreamJoiner) AddChild(node node.Node) {
+func (j *StreamJoiner) AddChild(node topology.Node) {
 	j.childs = append(j.childs, node)
 }
 
@@ -60,8 +60,8 @@ func (j *StreamJoiner) Next() bool {
 	return true
 }
 
-func (j *StreamJoiner) Type() node.Type {
-	return node.Type(`stream_joiner`)
+func (j *StreamJoiner) Type() topology.Type {
+	return topology.Type(`stream_joiner`)
 }
 
 func (j *StreamJoiner) Name() string {

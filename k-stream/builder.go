@@ -178,13 +178,10 @@ func (b *StreamBuilder) Build(streams ...Stream) error {
 	}
 
 	b.config.Logger.Info(b.graph.Build())
-
 	b.config.Logger.Info(fmt.Sprintf("\n%s", b.config.String(b)))
-
 	if err := b.createChangelogTopics(); err != nil {
 		return err
 	}
-
 	b.setUpChangelogs()
 
 	return nil
@@ -242,7 +239,6 @@ func (b *StreamBuilder) GlobalTable(topic string, keyEncoder encoding.Builder, v
 		kStream:   s.(*kStream),
 		storeName: store,
 		options:   opts,
-		logger:    opts.logger,
 	}
 
 	return stream

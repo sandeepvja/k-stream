@@ -19,7 +19,7 @@ func (p *MockPartition) Append(r *data.Record) error {
 		r.Offset = int64(len(p.records))
 	}
 
-	println(`appended`, r.Partition, r.Offset)
+	//println(`appended`, r.Partition, r.Offset)
 	p.records = append(p.records, r)
 
 	return nil

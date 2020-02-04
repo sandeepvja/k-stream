@@ -62,8 +62,6 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 	}
 
 	stream := &globalTableStream{
-		restartOnFailure:      true,
-		restartOnFailureCount: 5,
 		tables:                make(map[string]*tableInstance),
 		logger:                config.Logger.NewLog(log.Prefixed(`global-tables`)),
 	}
@@ -126,23 +124,24 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 func (s *globalTableStream) StartStreams(runWg *sync.WaitGroup) {
 	s.logger.Info(`sync started...`)
 	defer s.logger.Info(`syncing completed`)
+
 	// create a waitgroup with the num of tables for table syncing
 	syncWg := new(sync.WaitGroup)
 	syncWg.Add(len(s.tables))
 	go func() {
+
 		// run waitgroup is for running table go routine
 		for _, table := range s.tables {
-
 			runWg.Add(1)
 			go func(t *tableInstance, syncWg *sync.WaitGroup) {
 				t.Init()
 				syncWg.Done()
-				// once the table stopped mark un waitgroup as done
+
+				// once the table stopped mark run waitgroup as done
 				<-t.stopped
 				runWg.Done()
 			}(table, syncWg)
 		}
-
 	}()
 
 	// method should be blocked until table syncing is done

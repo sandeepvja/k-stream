@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/pickme-go/errors"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
 	"github.com/pickme-go/k-stream/k-stream/store"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 )
 
 type GlobalTableJoiner struct {
@@ -17,23 +17,23 @@ type GlobalTableJoiner struct {
 	ValueMapper   ValueMapper
 	store         store.Store
 	Registry      store.Registry
-	childBuilders []node.NodeBuilder
-	childs        []node.Node
+	childBuilders []topology.NodeBuilder
+	childs        []topology.Node
 }
 
-func (j *GlobalTableJoiner) ChildBuilders() []node.NodeBuilder {
+func (j *GlobalTableJoiner) ChildBuilders() []topology.NodeBuilder {
 	return j.childBuilders
 }
 
-func (j *GlobalTableJoiner) Childs() []node.Node {
+func (j *GlobalTableJoiner) Childs() []topology.Node {
 	return j.childs
 }
 
-func (j *GlobalTableJoiner) AddChildBuilder(builder node.NodeBuilder) {
+func (j *GlobalTableJoiner) AddChildBuilder(builder topology.NodeBuilder) {
 	j.childBuilders = append(j.childBuilders, builder)
 }
 
-func (j *GlobalTableJoiner) AddChild(node node.Node) {
+func (j *GlobalTableJoiner) AddChild(node topology.Node) {
 	j.childs = append(j.childs, node)
 }
 
@@ -56,17 +56,17 @@ func (j *GlobalTableJoiner) Run(ctx context.Context, kIn, vIn interface{}) (kOut
 	return kIn, v, true, err
 }
 
-func (j *GlobalTableJoiner) Type() node.Type {
-	return node.TypeJoiner
+func (j *GlobalTableJoiner) Type() topology.Type {
+	return topology.TypeJoiner
 }
 
-func (j *GlobalTableJoiner) Build() (node.Node, error) { //TODO: write new build
+func (j *GlobalTableJoiner) Build() (topology.Node, error) { //TODO: write new build
 	j.store = j.Registry.Store(j.Store)
 	if j.store == nil {
 		return nil, errors.New(`store [` + j.Store + `] dose not exist`)
 	}
 
-	var childs []node.Node
+	var childs []topology.Node
 	//var childBuilders []node.NodeBuilder
 
 	for _, childBuilder := range j.childBuilders {

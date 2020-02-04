@@ -5,9 +5,9 @@ import (
 	"github.com/awalterschulze/gographviz"
 	"github.com/pickme-go/k-stream/k-stream/branch"
 	"github.com/pickme-go/k-stream/k-stream/internal/join"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
 	"github.com/pickme-go/k-stream/k-stream/processors"
 	"github.com/pickme-go/k-stream/k-stream/store"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 	"strings"
 )
 
@@ -253,7 +253,7 @@ func (g *Graph) Store(parent string, store store.Store, attrs map[string]string,
 	}
 }
 
-func (g *Graph) RenderTopology(t *node.TopologyBuilder) {
+func (g *Graph) RenderTopology(t *topology.TopologyBuilder) {
 
 	nName := `streams_` + fmt.Sprint(getId())
 	sourceName := strings.ReplaceAll(t.Source.Name(), `-`, `_`)
@@ -270,7 +270,7 @@ func (g *Graph) Build() string {
 	return g.vizGraph.String()
 }
 
-func draw(parent string, builders []node.NodeBuilder, graph *Graph) {
+func draw(parent string, builders []topology.NodeBuilder, graph *Graph) {
 
 	var nodeName string
 	for id, b := range builders {
@@ -287,7 +287,7 @@ func draw(parent string, builders []node.NodeBuilder, graph *Graph) {
 				`shape`: `square`,
 			}, edgeAttr)
 
-		case node.SinkBuilder:
+		case topology.SinkBuilder:
 			//nName := parent + fmt.Sprint(n.ID())
 			nName := n.Name() + string(n.Type()) + fmt.Sprint(n.ID())
 			nName=strings.ReplaceAll(nName, `.`, `_`)

@@ -3,7 +3,7 @@ package processors
 import (
 	"context"
 	"github.com/pickme-go/errors"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 )
 
 type ValueTransformFunc func(ctx context.Context, key, value interface{}) (vOut interface{}, err error)
@@ -11,12 +11,12 @@ type ValueTransformFunc func(ctx context.Context, key, value interface{}) (vOut 
 type ValueTransformer struct {
 	Id                 int32
 	ValueTransformFunc ValueTransformFunc
-	childBuilders      []node.NodeBuilder
-	childs             []node.Node
+	childBuilders      []topology.NodeBuilder
+	childs             []topology.Node
 }
 
-func (vt *ValueTransformer) Build() (node.Node, error) {
-	var childs []node.Node
+func (vt *ValueTransformer) Build() (topology.Node, error) {
+	var childs []topology.Node
 	//var childBuilders []node.NodeBuilder
 
 	for _, childBuilder := range vt.childBuilders {
@@ -35,11 +35,11 @@ func (vt *ValueTransformer) Build() (node.Node, error) {
 	}, nil
 }
 
-func (vt *ValueTransformer) ChildBuilders() []node.NodeBuilder {
+func (vt *ValueTransformer) ChildBuilders() []topology.NodeBuilder {
 	return vt.childBuilders
 }
 
-func (vt *ValueTransformer) AddChildBuilder(builder node.NodeBuilder) {
+func (vt *ValueTransformer) AddChildBuilder(builder topology.NodeBuilder) {
 	vt.childBuilders = append(vt.childBuilders, builder)
 }
 
@@ -67,14 +67,14 @@ func (vt *ValueTransformer) Run(ctx context.Context, kIn, vIn interface{}) (kOut
 	return kIn, v, true, err
 }
 
-func (vt *ValueTransformer) Type() node.Type {
-	return node.Type(`value_transformer`)
+func (vt *ValueTransformer) Type() topology.Type {
+	return topology.Type(`value_transformer`)
 }
 
-func (vt *ValueTransformer) Childs() []node.Node {
+func (vt *ValueTransformer) Childs() []topology.Node {
 	return vt.childs
 }
 
-func (vt *ValueTransformer) AddChild(node node.Node) {
+func (vt *ValueTransformer) AddChild(node topology.Node) {
 	vt.childs = append(vt.childs, node)
 }

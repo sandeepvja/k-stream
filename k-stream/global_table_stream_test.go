@@ -11,29 +11,19 @@ func TestGlobalTableStream_StartStreams(t *testing.T) {
 		Topics: mocksTopics,
 	}
 	if err := kafkaAdmin.CreateTopics(map[string]*admin.Topic{
-		`transaction`: {
-			Name:              "transaction",
+		`tp1`: {
+			Name:              "tp1",
 			NumPartitions:     2,
 			ReplicationFactor: 1,
 		},
-		`customer_profile`: {
-			Name:              "customer_profile",
-			NumPartitions:     2,
-			ReplicationFactor: 1,
-		},
-		`account_detail`: {
-			Name:              "account_detail",
-			NumPartitions:     2,
-			ReplicationFactor: 1,
-		},
-		`message`: {
-			Name:              "message",
+		`tp2`: {
+			Name:              "tp2",
 			NumPartitions:     2,
 			ReplicationFactor: 1,
 		},
 	}); err != nil {
-		panic(err)
+		t.Error(err)
 	}
 
-	//gTableStream := newGlobalTableStream()
+	gTableStream := newGlobalTableStream()
 }

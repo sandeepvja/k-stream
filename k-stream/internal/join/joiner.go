@@ -2,7 +2,7 @@ package join
 
 import (
 	"context"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 )
 
 type Type int
@@ -13,7 +13,7 @@ const (
 )
 
 type Joiner interface {
-	node.Node
+	topology.Node
 	Join(ctx context.Context, key, val interface{}) (joinedVal interface{}, err error)
 }
 

@@ -7,7 +7,7 @@ import (
 	"github.com/pickme-go/k-stream/data"
 	context2 "github.com/pickme-go/k-stream/k-stream/context"
 	"github.com/pickme-go/k-stream/k-stream/encoding"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 	"github.com/pickme-go/k-stream/producer"
 	"time"
 )
@@ -34,15 +34,15 @@ type KSink struct {
 	recordTransformer func(ctx context.Context, in SinkRecord) (out SinkRecord, err error)
 }
 
-func (s *KSink) Childs() []node.Node {
-	return []node.Node{}
+func (s *KSink) Childs() []topology.Node {
+	return []topology.Node{}
 }
 
-func (s *KSink) ChildBuilders() []node.NodeBuilder {
-	return []node.NodeBuilder{}
+func (s *KSink) ChildBuilders() []topology.NodeBuilder {
+	return []topology.NodeBuilder{}
 }
 
-func (s *KSink) Build() (node.Node, error) {
+func (s *KSink) Build() (topology.Node, error) {
 	p, err := s.ProducerBuilder(&producer.Config{
 		//id: producer.NewProducerId(s.topic(s.topic(s.TopicPrefix))),
 	})
@@ -62,11 +62,11 @@ func (s *KSink) Build() (node.Node, error) {
 	}, nil
 }
 
-func (s *KSink) AddChildBuilder(builder node.NodeBuilder) {
+func (s *KSink) AddChildBuilder(builder topology.NodeBuilder) {
 	panic("implement me")
 }
 
-func (s *KSink) AddChild(node node.Node) {
+func (s *KSink) AddChild(node topology.Node) {
 	panic("implement me")
 }
 
@@ -121,8 +121,8 @@ func (s *KSink) SinkType() string {
 	return `kafka`
 }
 
-func (*KSink) Type() node.Type {
-	return node.TypeSink
+func (*KSink) Type() topology.Type {
+	return topology.TypeSink
 }
 
 func (s *KSink) Info() map[string]string {
