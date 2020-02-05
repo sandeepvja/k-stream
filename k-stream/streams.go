@@ -133,7 +133,7 @@ func (ins *Instances) Start() (err error) {
 	// start global table streams
 	if len(ins.globalTables) > 0 {
 		//wg.Add(1)
-		ins.globalTableStream = newGlobalTableStream(ins.globalTables, &GlobalTableStreamConfig{
+		ins.globalTableStream, err = newGlobalTableStream(ins.globalTables, &GlobalTableStreamConfig{
 			ConsumerBuilder: ins.builder.defaultBuilders.PartitionConsumer,
 			Logger:          ins.logger,
 			KafkaAdmin:      ins.builder.defaultBuilders.KafkaAdmin,
@@ -141,6 +141,9 @@ func (ins *Instances) Start() (err error) {
 			Metrics:         ins.metricsReporter,
 			BackendBuilder:  ins.builder.defaultBuilders.Backend,
 		})
+		if err != nil {
+			return errors.WithPrevious(err, `global table stream start failed`)
+		}
 		ins.globalTableStream.StartStreams(wg)
 
 		if len(ins.streams) < 1 {

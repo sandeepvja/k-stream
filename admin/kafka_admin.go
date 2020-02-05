@@ -94,6 +94,7 @@ func (c *kafkaAdmin) FetchInfo(topics []string) (map[string]*Topic, error) {
 	if err != nil {
 		return nil, errors.WithPrevious(err, `cannot get metadata : `)
 	}
+
 	for _, tp := range topicMeta {
 
 		var pts []Partition

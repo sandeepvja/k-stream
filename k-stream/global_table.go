@@ -17,7 +17,7 @@ import (
 )
 
 // Starting offset for the global table partition.
-type GlobalTableOffset int
+type GlobalTableOffset int64
 
 // GlobalTableOffsetDefault defines the starting offset for the GlobalTable when GlobalTable stream syncing started.
 const GlobalTableOffsetDefault GlobalTableOffset = 0

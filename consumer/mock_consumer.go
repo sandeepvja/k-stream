@@ -52,14 +52,16 @@ type mockConsumer struct {
 	fetchBatchSize int
 	partitions     chan Partition
 	closing        bool
+	InitialOffset Offset
 }
 
-func NewMockConsumer(topics *admin.Topics) Consumer {
+func NewMockConsumer(topics *admin.Topics) *mockConsumer {
 	return &mockConsumer{
 		topics:         topics,
 		fetchInterval:  100 * time.Millisecond,
 		fetchBatchSize: 50,
 		wg:             new(sync.WaitGroup),
+		InitialOffset:Earliest,
 	}
 }
 
@@ -112,13 +114,11 @@ func (m *mockConsumer) Close() error {
 func (m *mockConsumer) consume(partition *mockConsumerPartition) {
 	pt := m.topics.Topics()[partition.tp.Topic].Partitions()[partition.tp.Partition]
 
-	var offset int64
+	offset := int64(m.InitialOffset)
 	for !m.closing {
-
-		//time.Sleep(2 * time.Second)
 		time.Sleep(m.fetchInterval)
 
-		records, off, err := pt.Fetch(offset, m.fetchBatchSize)
+		records, err := pt.Fetch(offset, m.fetchBatchSize)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -126,8 +126,6 @@ func (m *mockConsumer) consume(partition *mockConsumerPartition) {
 		if len(records) < 1 {
 			continue
 		}
-
-		offset = off + 1
 
 		for _, msg := range records {
 			partition.records <- &data.Record{
@@ -141,6 +139,8 @@ func (m *mockConsumer) consume(partition *mockConsumerPartition) {
 				Headers:   msg.Headers,
 			}
 		}
+
+		offset = records[len(records)-1].Offset + 1
 
 	}
 	close(partition.records)

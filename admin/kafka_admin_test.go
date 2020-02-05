@@ -1,49 +1,120 @@
 package admin
 
-import "testing"
+import (
+	"github.com/Shopify/sarama"
+	"github.com/pickme-go/log/v2"
+	"testing"
+)
+
 
 func TestKafkaAdmin_FetchInfo(t *testing.T) {
-	topic := `test`
-	admin := NewMockAdminWithTopics(map[string]*Topic{
-		topic: {
-			Name:          "",
-			Partitions:    nil,
-			NumPartitions: 2,
-		}})
+	seedBroker := sarama.NewMockBroker(t, 1)
+	defer seedBroker.Close()
+
+	seedBroker.SetHandlerByMap(map[string]sarama.MockResponse{
+		"MetadataRequest": sarama.NewMockMetadataResponse(t).
+			SetController(seedBroker.BrokerID()).
+			SetLeader("my_topic", 0, seedBroker.BrokerID()).
+			SetBroker(seedBroker.Addr(), seedBroker.BrokerID()),
+	})
+
+	config := sarama.NewConfig()
+	config.Version = sarama.V1_0_0_0
+	saramaAdmin, err := sarama.NewClusterAdmin([]string{seedBroker.Addr()}, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	topic := `my_topic`
+	admin := &kafkaAdmin{
+		admin: saramaAdmin,
+		logger: log.NewNoopLogger(),
+	}
 	tps, err := admin.FetchInfo([]string{topic})
 	if err != nil {
 		t.Error(err)
 	}
 
-	if tps[topic].NumPartitions != 2 {
+	if tps[topic].NumPartitions != 1 {
 		t.Fail()
+	}
+
+	err = saramaAdmin.Close()
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
 func TestKafkaAdmin_CreateTopics(t *testing.T) {
-	topic := `test`
-	admin := &MockKafkaAdmin{NewMockTopics()}
+	seedBroker := sarama.NewMockBroker(t, 1)
+	defer seedBroker.Close()
 
-	err := admin.CreateTopics(map[string]*Topic{
+	seedBroker.SetHandlerByMap(map[string]sarama.MockResponse{
+		"MetadataRequest": sarama.NewMockMetadataResponse(t).
+			SetController(seedBroker.BrokerID()).
+			SetBroker(seedBroker.Addr(), seedBroker.BrokerID()),
+		"CreateTopicsRequest": sarama.NewMockCreateTopicsResponse(t),
+	})
+
+	config := sarama.NewConfig()
+	config.Version = sarama.V0_10_2_0
+	saramaAdmin, err := sarama.NewClusterAdmin([]string{seedBroker.Addr()}, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	topic := `my_topic`
+	admin := &kafkaAdmin{
+		admin: saramaAdmin,
+		logger: log.NewNoopLogger(),
+	}
+
+	err = admin.CreateTopics(map[string]*Topic{
 		topic: {
-			NumPartitions:     5,
-			ReplicationFactor: 2,
+			Name: topic,
+			NumPartitions:     1,
+			ReplicationFactor: 1,
 		},
 	})
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
-
-	tps, err := admin.FetchInfo([]string{topic})
+	err = saramaAdmin.Close()
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
+	}
+}
+
+func TestKafkaAdmin_DeleteTopics(t *testing.T) {
+	seedBroker := sarama.NewMockBroker(t, 1)
+	defer seedBroker.Close()
+
+	seedBroker.SetHandlerByMap(map[string]sarama.MockResponse{
+		"MetadataRequest": sarama.NewMockMetadataResponse(t).
+			SetController(seedBroker.BrokerID()).
+			SetBroker(seedBroker.Addr(), seedBroker.BrokerID()),
+		"DeleteTopicsRequest": sarama.NewMockDeleteTopicsResponse(t),
+	})
+
+	config := sarama.NewConfig()
+	config.Version = sarama.V0_10_2_0
+	saramaAdmin, err := sarama.NewClusterAdmin([]string{seedBroker.Addr()}, config)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	if tps[topic].NumPartitions != 5 {
-		t.Fail()
+	topic := `my_topic`
+	admin := &kafkaAdmin{
+		admin: saramaAdmin,
+		logger: log.NewNoopLogger(),
 	}
 
-	if tps[topic].ReplicationFactor != 2 {
-		t.Fail()
+	_, err = admin.DeleteTopics([]string{topic})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = saramaAdmin.Close()
+	if err != nil {
+		t.Fatal(err)
 	}
 }

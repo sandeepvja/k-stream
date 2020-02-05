@@ -62,6 +62,13 @@ func (t *tableInstance) Init() {
 		}
 	}
 
+	if t.config.options.initialOffset == GlobalTableOffsetLatest {
+		t.startOffset = int64(GlobalTableOffsetLatest)
+		go t.Start()
+		<-t.synced
+		return
+	}
+
 	startOffset, err := t.offsets.GetOffsetOldest(t.tp.topic, t.tp.partition)
 	if err != nil {
 		t.logger.Fatal(fmt.Sprintf(`cannot read local offsetLocal due to %+v`, err))
@@ -75,13 +82,6 @@ func (t *tableInstance) Init() {
 	t.logger.Info(fmt.Sprintf(`brocker offsets found Start:%d and end:%d`, startOffset, endOffset))
 
 	defer t.logger.Info(fmt.Sprintf(`table sync done with [%d] records`, t.syncedCount))
-
-	if t.config.options.initialOffset == GlobalTableOffsetLatest {
-		t.startOffset = -1
-		go t.Start()
-		<-t.synced
-		return
-	}
 
 	// now get local offset from offset storeName
 	// if local offset is > 0 and > beginOffset then reset beginOffset = local offset

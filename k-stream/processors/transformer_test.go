@@ -52,11 +52,7 @@ func TestTransformer_Process_Should_Not_Transform_On_Error(t *testing.T) {
 		t.Fail()
 	}
 
-	if k != keyOrg {
-		t.Fail()
-	}
-
-	if v != valOrg {
+	if k != nil || v != nil {
 		t.Fail()
 	}
 }

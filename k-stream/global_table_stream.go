@@ -10,6 +10,7 @@ package kstream
 import (
 	"fmt"
 	"github.com/Shopify/sarama"
+	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/admin"
 	"github.com/pickme-go/k-stream/backend"
 	"github.com/pickme-go/k-stream/consumer"
@@ -55,10 +56,10 @@ type GlobalTableStreamConfig struct {
 }
 
 // newGlobalTableStream starts a
-func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableStreamConfig) *globalTableStream {
+func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableStreamConfig) (*globalTableStream, error) {
 	offsetBackend, err := config.BackendBuilder(offsetBackendName)
 	if err != nil {
-		config.Logger.Fatal(err)
+		return nil, errors.WithPrevious(err, `offset backend build failed`)
 	}
 
 	stream := &globalTableStream{
@@ -74,8 +75,7 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 	// get partition information's for topics
 	info, err := config.KafkaAdmin.FetchInfo(topics)
 	if err != nil {
-		config.Logger.Fatal(
-			fmt.Sprintf(`cannot fetch topic info - %+v`, err))
+		return nil, errors.WithPrevious(err, `cannot fetch topic info`)
 	}
 
 	consumedLatency := config.Metrics.Observer(metrics.MetricConf{
@@ -86,8 +86,7 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 	for _, topic := range info {
 
 		if topic.Error != nil && topic.Error != sarama.ErrNoError {
-			config.Logger.Fatal(
-				fmt.Sprintf(`cannot get topic info for %s due to %s`, topic.Name, topic.Error.Error()))
+			return nil, errors.WithPrevious(topic.Error, fmt.Sprintf(`cannot get topic info for %s`, topic.Name))
 		}
 		for i := int32(len(topic.Partitions)) - 1; i >= 0; i-- {
 			partitionConsumer, err := config.ConsumerBuilder.Build(
@@ -95,7 +94,7 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 				consumer.BuilderWithLogger(config.Logger.NewLog(log.Prefixed(fmt.Sprintf(`global-table.%s-%d`, topic.Name, i)))),
 			)
 			if err != nil {
-				config.Logger.Fatal(err)
+				return nil, errors.WithPrevious(err, `cannot build partition consumer`)
 			}
 
 			t := new(tableInstance)
@@ -117,7 +116,7 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 		}
 	}
 
-	return stream
+	return stream, nil
 }
 
 // StartStreams starts all the tables
@@ -144,7 +143,7 @@ func (s *globalTableStream) StartStreams(runWg *sync.WaitGroup) {
 		}
 	}()
 
-	// method should be blocked until table syncing is done
+	// method should be blocked until the syncing is done
 	syncWg.Wait()
 	s.printSyncInfo()
 }

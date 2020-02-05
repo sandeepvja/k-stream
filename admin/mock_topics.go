@@ -16,7 +16,7 @@ func (p *MockPartition) Append(r *data.Record) error {
 	p.Lock()
 	defer p.Unlock()
 	if len(p.records) > 0 {
-		r.Offset = int64(len(p.records))
+		r.Offset = int64(len(p.records)-1)
 	}
 
 	//println(`appended`, r.Partition, r.Offset)
@@ -37,29 +37,25 @@ func (p *MockPartition) FetchAll() (records []*data.Record) {
 	return p.records
 }
 
-func (p *MockPartition) Fetch(start int64, limit int) (records []*data.Record, offset int64, err error) {
+func (p *MockPartition) Fetch(start int64, limit int) (records []*data.Record, err error) {
 	p.Lock()
 	defer p.Unlock()
+
+	if len(p.records) < 1 {
+		return
+	}
+
 	// get a record chunk
 	if start == -1 {
 		start = int64(len(p.records) - 1)
-		offset = start
 	}
 
 	if start == -2 {
 		start = 0
-		offset = start
-	}
-
-	offset = start
-
-	if len(p.records) == 0 {
-		return
 	}
 
 	if start > int64(len(p.records)-1) {
-		return
-		//return nil, 0, sarama.ErrOffsetOutOfRange
+		return nil, sarama.ErrOffsetOutOfRange
 	}
 
 	chunk := p.records[start:]
@@ -175,9 +171,9 @@ func (td *Topics) Topics() map[string]*MockTopic {
 	return td.topics
 }
 
-func (t *MockTopic) FetchAll() (records []*data.Record) {
+func (tp *MockTopic) FetchAll() (records []*data.Record) {
 	rec := make([]*data.Record, 0)
-	for _, v := range t.partitions {
+	for _, v := range tp.partitions {
 		rec = append(rec, v.records...)
 	}
 	return rec

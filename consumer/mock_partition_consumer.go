@@ -19,11 +19,11 @@ type mockPartitionConsumer struct {
 	events         chan Event
 }
 
-func NewMockPartitionConsumer(topics *admin.Topics, offsets offsets.Manager) PartitionConsumer {
+func NewMockPartitionConsumer(topics *admin.Topics, offsets offsets.Manager) *mockPartitionConsumer {
 	return &mockPartitionConsumer{
 		topics:         topics,
 		fetchInterval:  100 * time.Millisecond,
-		fetchBatchSize: 4,
+		fetchBatchSize: 1000,
 		closed:         make(chan bool, 1),
 		offsets:        offsets,
 		events:         make(chan Event, 100),
@@ -44,7 +44,7 @@ func (m *mockPartitionConsumer) consume(topic string, partition int32, offset Of
 	for !m.closing {
 		time.Sleep(m.fetchInterval)
 
-		records, off, err := pt.Fetch(currentOffset, m.fetchBatchSize)
+		records, err := pt.Fetch(currentOffset, m.fetchBatchSize)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -53,8 +53,6 @@ func (m *mockPartitionConsumer) consume(topic string, partition int32, offset Of
 			m.events <- &PartitionEnd{}
 			continue
 		}
-
-		currentOffset = off + 1
 
 		partitionEnd, err := m.offsets.GetOffsetLatest(topic, partition)
 		if err != nil {
@@ -78,6 +76,8 @@ func (m *mockPartitionConsumer) consume(topic string, partition int32, offset Of
 				m.events <- &PartitionEnd{}
 			}
 		}
+
+		currentOffset = records[len(records)-1].Offset + 1
 
 	}
 
