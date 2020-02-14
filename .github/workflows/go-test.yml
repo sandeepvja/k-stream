@@ -10,19 +10,23 @@ on:
       - '**.md'
 jobs:
   run:
-    name: Run
+    name: Go
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
+        go-version: [1.13.x]
         operating-system: [ubuntu-latest, windows-latest, macos-latest]
+    env:
+      GO111MODULE: on
     steps:
+
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go-version }
+
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: setup-go ^1.13.6
-        uses: ./
-        with:
-          go-version: ^1.13.6
 
       - name: Go Test
         #        uses: docker://golang:1.13.6
