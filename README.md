@@ -11,7 +11,7 @@ Processing with its de-duplicator. It can process message as micro batches or on
 required. KStream can handle good amount of throughput (50,000 messages pe second with micro batch enabled) in a fault 
 tolerable manner with a  very minimal amount of latency (2 ~ 5 ms)
 
-Project uses two external libraries [confluent-kafka-go](https://github.com/confluentinc/confluent-kafka-go) and 
+Project uses two external libraries
 [sarama](https://github.com/Shopify/sarama) for consumers and producers
 
 ## Stream Components
