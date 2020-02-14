@@ -2,7 +2,7 @@ name: build-test
 on:
   push:
     branches:
-      - master
+      - github-acrions
     paths-ignore:
       - '**.md'
   pull_request:
