@@ -62,13 +62,6 @@ func (t *tableInstance) Init() {
 		}
 	}
 
-	if t.config.options.initialOffset == GlobalTableOffsetLatest {
-		t.startOffset = int64(GlobalTableOffsetLatest)
-		go t.Start()
-		<-t.synced
-		return
-	}
-
 	startOffset, err := t.offsets.GetOffsetOldest(t.tp.topic, t.tp.partition)
 	if err != nil {
 		t.logger.Fatal(fmt.Sprintf(`cannot read local offsetLocal due to %+v`, err))
@@ -77,6 +70,14 @@ func (t *tableInstance) Init() {
 	endOffset, err := t.offsets.GetOffsetLatest(t.tp.topic, t.tp.partition)
 	if err != nil {
 		t.logger.Fatal(fmt.Sprintf(`cannot read local offsetLocal due to %+v`, err))
+	}
+
+	if t.config.options.initialOffset == GlobalTableOffsetLatest {
+		t.startOffset = int64(GlobalTableOffsetLatest)
+		t.endOffset = endOffset
+		go t.Start()
+		<-t.synced
+		return
 	}
 
 	t.logger.Info(fmt.Sprintf(`brocker offsets found Start:%d and end:%d`, startOffset, endOffset))
@@ -174,7 +175,7 @@ func (t *tableInstance) offsetLocal() int64 {
 		if err := t.markOffset(0); err != nil {
 			t.logger.Fatal(err)
 		}
-		return 0
+		return t.startOffset
 	}
 
 	offset, err := strconv.Atoi(string(byt))
@@ -189,7 +190,6 @@ func (t *tableInstance) offsetLocal() int64 {
 }
 
 func (t *tableInstance) process(r *data.Record, retry int, err error) error {
-
 	if retry == 0 {
 		return errors.WithPrevious(err, `cannot process message for []`)
 	}

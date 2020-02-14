@@ -42,18 +42,18 @@ func (j *GlobalTableJoiner) Next() bool {
 }
 
 func (j *GlobalTableJoiner) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut interface{}, next bool, err error) {
-	v, err := j.Join(ctx, kIn, vIn)
+	joined, err := j.Join(ctx, kIn, vIn)
 	if err != nil {
 		return
 	}
 
 	for _, child := range j.childs {
-		_, _, next, err := child.Run(ctx, kIn, v)
+		_, _, next, err := child.Run(ctx, kIn, joined)
 		if err != nil || !next {
 			return nil, nil, false, err
 		}
 	}
-	return kIn, v, true, err
+	return kIn, joined, true, err
 }
 
 func (j *GlobalTableJoiner) Type() topology.Type {

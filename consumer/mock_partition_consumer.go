@@ -21,8 +21,9 @@ type mockPartitionConsumer struct {
 
 func NewMockPartitionConsumer(topics *admin.Topics, offsets offsets.Manager) *mockPartitionConsumer {
 	return &mockPartitionConsumer{
-		topics:         topics,
-		fetchInterval:  100 * time.Millisecond,
+		topics:        topics,
+		fetchInterval: 100 * time.Microsecond,
+		//fetchInterval:  1 * time.Second,
 		fetchBatchSize: 1000,
 		closed:         make(chan bool, 1),
 		offsets:        offsets,
@@ -31,15 +32,18 @@ func NewMockPartitionConsumer(topics *admin.Topics, offsets offsets.Manager) *mo
 }
 
 func (m *mockPartitionConsumer) Consume(topic string, partition int32, offset Offset) (<-chan Event, error) {
-
 	go m.consume(topic, partition, offset)
 	return m.events, nil
 }
 
-func (m *mockPartitionConsumer) consume(topic string, partition int32, offset Offset) error {
+func (m *mockPartitionConsumer) consume(topic string, partition int32, offset Offset) {
 	pt := m.topics.Topics()[topic].Partitions()[int(partition)]
 
 	var currentOffset = int64(offset)
+
+	if offset == -1 {
+		currentOffset = pt.Latest() + 1
+	}
 
 	for !m.closing {
 		time.Sleep(m.fetchInterval)
@@ -78,11 +82,9 @@ func (m *mockPartitionConsumer) consume(topic string, partition int32, offset Of
 		}
 
 		currentOffset = records[len(records)-1].Offset + 1
-
 	}
 
 	m.closed <- true
-	return nil
 }
 
 func (m *mockPartitionConsumer) Errors() <-chan *Error {

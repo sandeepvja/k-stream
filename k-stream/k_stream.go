@@ -86,7 +86,6 @@ type kStream struct {
 }
 
 func (c *kStreamOptions) apply(options ...Option) {
-
 	// apply defaults
 	c.processorRetryCount = 1
 	c.processorRetryInterval = 0
@@ -213,7 +212,6 @@ func withBuilder(builder *StreamBuilder) Option {
 }
 
 func newKStream(topic topic, keyEncoder encoding.Builder, valEncoder encoding.Builder, parent *kStream, options ...Option) *kStream {
-
 	config := new(kStreamOptions)
 	config.apply(options...)
 
@@ -251,7 +249,6 @@ func (s *kStream) Branch(branches []branch.Details, opts ...Option) []Stream {
 }
 
 func (s *kStream) branch(branches []branch.Details, parallel bool, opts ...Option) []Stream {
-
 	bs := &branch.Splitter{
 		Id: atomic.AddInt32(&nodeCounter, 1),
 	}
@@ -339,7 +336,6 @@ func (s *kStream) Transform(transformer processors.TransFunc) Stream {
 }
 
 func (s *kStream) Filter(filter processors.FilterFunc) Stream {
-
 	f := &processors.Filter{
 		FilterFunc: filter,
 		Id:         atomic.AddInt32(&nodeCounter, 1),
@@ -384,7 +380,6 @@ func (s *kStream) JoinGlobalTable(stream Stream, keyMapper join.KeyMapper, valMa
 }
 
 func (s *kStream) JoinStream(stream Stream, valMapper join.ValueMapper, opts ...RepartitionOption) Stream {
-
 	rightStream, ok := stream.(*kStream)
 	if !ok {
 		log.Fatal(`k-stream.kStream`,
@@ -542,7 +537,6 @@ func (s *kStream) Process(processor processors.ProcessFunc) Stream {
 }
 
 func (s *kStream) Through(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption) Stream {
-
 	if keyEncoder == nil {
 		log.Fatal(`k-stream.kStream`, fmt.Sprintf(`keyEncoder cannot be null for sink [%s]`, topic))
 	}
@@ -561,7 +555,6 @@ func (s *kStream) Through(topic string, keyEncoder encoding.Builder, valEncoder 
 }
 
 func (s *kStream) To(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption) {
-
 	if keyEncoder == nil {
 		log.Fatal(`k-stream.kStream`, fmt.Sprintf(`keyEncoder cannot be null for sink [%s]`, topic))
 	}
@@ -626,7 +619,6 @@ func (s *kStream) Build() ([]*kStream, error) {
 }
 
 func (s *kStream) build(node topology.NodeBuilder) error {
-
 	switch nd := node.(type) {
 	case *join.GlobalTableJoiner:
 		nd.Registry = s.config.builder.storeRegistry

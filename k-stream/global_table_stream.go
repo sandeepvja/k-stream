@@ -63,8 +63,8 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 	}
 
 	stream := &globalTableStream{
-		tables:                make(map[string]*tableInstance),
-		logger:                config.Logger.NewLog(log.Prefixed(`global-tables`)),
+		tables: make(map[string]*tableInstance),
+		logger: config.Logger.NewLog(log.Prefixed(`global-tables`)),
 	}
 
 	var topics []string
@@ -135,14 +135,12 @@ func (s *globalTableStream) StartStreams(runWg *sync.WaitGroup) {
 			go func(t *tableInstance, syncWg *sync.WaitGroup) {
 				t.Init()
 				syncWg.Done()
-
 				// once the table stopped mark run waitgroup as done
 				<-t.stopped
 				runWg.Done()
 			}(table, syncWg)
 		}
 	}()
-
 	// method should be blocked until the syncing is done
 	syncWg.Wait()
 	s.printSyncInfo()
@@ -157,11 +155,17 @@ func (s *globalTableStream) printSyncInfo() {
 func (s *globalTableStream) stop() {
 	s.logger.Info(`streams closing...`)
 	defer s.logger.Info(`streams closed`)
+	wg := new(sync.WaitGroup)
+	wg.Add(len(s.tables))
 	for _, t := range s.tables {
-		if err := t.consumer.Close(); err != nil {
-			t.logger.Error(err)
-			continue
-		}
-		t.logger.Info(`stream closed`)
+		go func(wg *sync.WaitGroup, t *tableInstance) {
+			defer wg.Done()
+			if err := t.consumer.Close(); err != nil {
+				t.logger.Error(err)
+				return
+			}
+			t.logger.Info(`stream closed`)
+		}(wg, t)
 	}
+	wg.Wait()
 }
