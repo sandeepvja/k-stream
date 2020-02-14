@@ -14,11 +14,16 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [ubuntu-latest, windows-latest]
+        operating-system: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: setup-go ^1.13.6
+        uses: ./
+        with:
+          go-version: ^1.13.6
+
       - name: Go Test
-#        uses: docker://golang:1.13.6
+        #        uses: docker://golang:1.13.6
         run: go test -v ./...
