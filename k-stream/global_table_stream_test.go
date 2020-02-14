@@ -17,8 +17,7 @@ import (
 	"time"
 )
 
-func TestGlobalTableStream_StartStreams_After(t *testing.T) {
-
+func TestGlobalTableStream_StartStreams(t *testing.T) {
 	initStream := func(startOffset GlobalTableOffset) (*globalTableStream, func(expectedCount int), func(start int, end int)) {
 		mocksTopics := admin.NewMockTopics()
 		kafkaAdmin := &admin.MockKafkaAdmin{
