@@ -1,5 +1,8 @@
 ## KStream - Kafa Streams for Golang
 
+[![GoDoc](https://godoc.org/github.com/pickme-go/k-stream?status.svg)](https://godoc.org/github.com/pickme-go/k-stream)
+![build](https://github.com/pickme-go/k-stream/workflows/build/badge.svg)
+[![Coverage](https://codecov.io/gh/pickme-go/k-stream/branch/master/graph/badge.svg)](https://codecov.io/gh/pickme-go/k-stream)
 
 KStream is a light-weight implementation of [kafka streams](https://kafka.apache.org/documentation/streams/).
 It is heavily inspired by Kafka-Streams(Java) library. KStream
