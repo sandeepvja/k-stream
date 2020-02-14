@@ -190,8 +190,8 @@ func (tp *MockTopic) FetchAll() (records []*data.Record) {
 	tp.mu.Lock()
 	defer tp.mu.Unlock()
 	rec := make([]*data.Record, 0)
-	for _, v := range tp.partitions {
-		rec = append(rec, v.records...)
+	for _, pt := range tp.partitions {
+		rec = append(rec, pt.FetchAll()...)
 	}
 	return rec
 }
