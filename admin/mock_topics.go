@@ -187,6 +187,8 @@ func (td *Topics) Topics() map[string]*MockTopic {
 }
 
 func (tp *MockTopic) FetchAll() (records []*data.Record) {
+	tp.mu.Lock()
+	defer tp.mu.Unlock()
 	rec := make([]*data.Record, 0)
 	for _, v := range tp.partitions {
 		rec = append(rec, v.records...)
