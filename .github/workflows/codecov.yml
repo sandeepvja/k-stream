@@ -2,7 +2,7 @@ name: coverage
 on:
   push:
     branches:
-      - github-acrions
+      - *
     paths-ignore:
       - '**.md'
   pull_request:
