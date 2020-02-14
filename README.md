@@ -1,4 +1,4 @@
-## KStream - Kafa Streams for Golang
+## KStream - Kafka Streams for Golang
 
 [![GoDoc](https://godoc.org/github.com/pickme-go/k-stream?status.svg)](https://godoc.org/github.com/pickme-go/k-stream)
 ![build](https://github.com/pickme-go/k-stream/workflows/build/badge.svg)
