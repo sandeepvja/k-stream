@@ -74,6 +74,7 @@ func NewMemoryBackend(logger log.Logger, reporter metrics.Reporter) backend.Back
 	m.metrics.storageSize = reporter.Gauge(metrics.MetricConf{Path: `backend_storage_size`, Labels: labels})
 	m.metrics.deleteLatency = reporter.Observer(metrics.MetricConf{Path: `backend_delete_latency_microseconds`, Labels: labels})
 
+	go m.runCleaner()
 	return m
 }
 
@@ -81,18 +82,12 @@ func (m *memory) runCleaner() {
 	ticker := time.NewTicker(1 * time.Millisecond)
 	for range ticker.C {
 		records := m.snapshot()
-		deDuplicated := make(map[string]memoryRecord)
-
 		for _, record := range records {
 			if record.expiry > 0 && time.Since(record.createdAt).Nanoseconds() > record.expiry.Nanoseconds() {
-				continue
+				if err := m.Delete(record.key); err != nil {
+					m.logger.Error(err)
+				}
 			}
-			deDuplicated[string(record.key)] = record
-		}
-
-		var deDuplicatedSlice []memoryRecord
-		for _, r := range deDuplicated {
-			deDuplicatedSlice = append(deDuplicatedSlice, r)
 		}
 	}
 }

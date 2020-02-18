@@ -3,7 +3,7 @@ package processors
 import (
 	"context"
 	"github.com/pickme-go/errors"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 )
 
 type TransFunc func(ctx context.Context, key, value interface{}) (kOut, vOut interface{}, err error)
@@ -11,20 +11,20 @@ type TransFunc func(ctx context.Context, key, value interface{}) (kOut, vOut int
 type Transformer struct {
 	Id            int32
 	TransFunc     TransFunc
-	childBuilders []node.NodeBuilder
-	childs        []node.Node
+	childBuilders []topology.NodeBuilder
+	childs        []topology.Node
 }
 
-func (t *Transformer) Childs() []node.Node {
+func (t *Transformer) Childs() []topology.Node {
 	return t.childs
 }
 
-func (t *Transformer) ChildBuilders() []node.NodeBuilder {
+func (t *Transformer) ChildBuilders() []topology.NodeBuilder {
 	return t.childBuilders
 }
 
-func (t *Transformer) Build() (node.Node, error) {
-	var childs []node.Node
+func (t *Transformer) Build() (topology.Node, error) {
+	var childs []topology.Node
 	//var childBuilders []node.NodeBuilder
 
 	for _, childBuilder := range t.childBuilders {
@@ -67,18 +67,18 @@ func (t *Transformer) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut
 	return k, v, true, err
 }
 
-func (t *Transformer) Type() node.Type {
-	return node.Type(`transformer`)
+func (t *Transformer) Type() topology.Type {
+	return topology.Type(`transformer`)
 }
 
 func (t *Transformer) Name() string {
 	return `transformer`
 }
 
-func (t *Transformer) AddChildBuilder(builder node.NodeBuilder) {
+func (t *Transformer) AddChildBuilder(builder topology.NodeBuilder) {
 	t.childBuilders = append(t.childBuilders, builder)
 }
 
-func (t *Transformer) AddChild(node node.Node) {
+func (t *Transformer) AddChild(node topology.Node) {
 	t.childs = append(t.childs, node)
 }

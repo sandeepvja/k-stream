@@ -17,7 +17,7 @@ import (
 )
 
 // Starting offset for the global table partition.
-type GlobalTableOffset int
+type GlobalTableOffset int64
 
 // GlobalTableOffsetDefault defines the starting offset for the GlobalTable when GlobalTable stream syncing started.
 const GlobalTableOffsetDefault GlobalTableOffset = 0
@@ -26,7 +26,7 @@ const GlobalTableOffsetDefault GlobalTableOffset = 0
 // suitable for stream topics since the topic can contains historical data.
 const GlobalTableOffsetLatest GlobalTableOffset = -1
 
-// globalTableStoreWriter overrides the persisting logic for GlobalTables.
+// globalTableStoreWriter overrides the persistence logic for GlobalTables.
 var globalTableStoreWriter = func(r *data.Record, store store.Store) error {
 	// tombstone handling
 	if r.Value == nil {
@@ -85,31 +85,26 @@ type GlobalTable interface {
 type globalKTable struct {
 	*kStream
 	storeName string
-	logger    log.Logger
 	store     store.Store
 	options   *globalTableOptions
 }
 
 func (t *globalKTable) To(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption) {
-	t.logger.Fatal(`k-stream.globalKTable`, `global table dose not support stream processing`)
+	panic(`global table dose not support stream processing`)
 }
 
 func (t *globalKTable) Transform(transformer processors.TransFunc) Stream {
-	t.logger.Fatal(`k-stream.globalKTable`, `global table dose not support stream transforming`)
-	return nil
+	panic(`global table dose not support stream transforming`)
 }
 
 func (t *globalKTable) Filter(filter processors.FilterFunc) Stream {
-	t.logger.Fatal(`k-stream.globalKTable`, `global table dose not support stream processing`)
-	return nil
+	panic(`global table dose not support stream processing`)
 }
 
 func (t *globalKTable) Process(processor processors.ProcessFunc) Stream {
-	t.logger.Fatal(`k-stream.globalKTable`, `global table dose not support stream processing`)
-	return nil
+	panic(`global table dose not support stream processing`)
 }
 
 func (t *globalKTable) Join(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper) Stream {
-	t.logger.Fatal(`k-stream.globalKTable`, `global table to global table joins are not supported yet`)
-	return nil
+	panic(`global table to global table joins are not supported yet`)
 }

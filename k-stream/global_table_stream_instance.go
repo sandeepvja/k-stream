@@ -64,28 +64,25 @@ func (t *tableInstance) Init() {
 
 	startOffset, err := t.offsets.GetOffsetOldest(t.tp.topic, t.tp.partition)
 	if err != nil {
-		t.logger.Fatal(
-			fmt.Sprintf(`cannot read local offsetLocal due to %+v`, err))
+		t.logger.Fatal(fmt.Sprintf(`cannot read local offsetLocal due to %+v`, err))
 	}
 
 	endOffset, err := t.offsets.GetOffsetLatest(t.tp.topic, t.tp.partition)
 	if err != nil {
-		t.logger.Fatal(
-			fmt.Sprintf(`cannot read local offsetLocal due to %+v`, err))
+		t.logger.Fatal(fmt.Sprintf(`cannot read local offsetLocal due to %+v`, err))
 	}
 
-	t.logger.Info(fmt.Sprintf(
-		`brocker offsets found Start:%d and end:%d`, startOffset, endOffset))
-
-	defer t.logger.Info(
-		fmt.Sprintf(`table sync done with [%d] records`, t.syncedCount))
-
 	if t.config.options.initialOffset == GlobalTableOffsetLatest {
-		t.startOffset = -1
+		t.startOffset = int64(GlobalTableOffsetLatest)
+		t.endOffset = endOffset
 		go t.Start()
 		<-t.synced
 		return
 	}
+
+	t.logger.Info(fmt.Sprintf(`brocker offsets found Start:%d and end:%d`, startOffset, endOffset))
+
+	defer t.logger.Info(fmt.Sprintf(`table sync done with [%d] records`, t.syncedCount))
 
 	// now get local offset from offset storeName
 	// if local offset is > 0 and > beginOffset then reset beginOffset = local offset
@@ -178,7 +175,7 @@ func (t *tableInstance) offsetLocal() int64 {
 		if err := t.markOffset(0); err != nil {
 			t.logger.Fatal(err)
 		}
-		return 0
+		return t.startOffset
 	}
 
 	offset, err := strconv.Atoi(string(byt))
@@ -193,7 +190,6 @@ func (t *tableInstance) offsetLocal() int64 {
 }
 
 func (t *tableInstance) process(r *data.Record, retry int, err error) error {
-
 	if retry == 0 {
 		return errors.WithPrevious(err, `cannot process message for []`)
 	}

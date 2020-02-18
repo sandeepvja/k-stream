@@ -14,8 +14,8 @@ import (
 	"github.com/pickme-go/k-stream/k-stream/branch"
 	"github.com/pickme-go/k-stream/k-stream/encoding"
 	"github.com/pickme-go/k-stream/k-stream/internal/join"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
 	"github.com/pickme-go/k-stream/k-stream/processors"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 	"github.com/pickme-go/k-stream/k-stream/worker_pool"
 	"github.com/pickme-go/log/v2"
 	"sync/atomic"
@@ -40,7 +40,7 @@ type Stream interface {
 	Transform(transformer processors.TransFunc) Stream
 	Filter(filter processors.FilterFunc) Stream
 	Process(processor processors.ProcessFunc) Stream
-	JoinGlobalTable(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper, typ join.Type) Stream
+	JoinGlobalTable(table Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper, typ join.Type) Stream
 	JoinKTable(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper) Stream
 	JoinStream(stream Stream, valMapper join.ValueMapper, opts ...RepartitionOption) Stream
 	//LeftJoin(stream Stream, keyMapper join.KeyMapper, valMapper join.ValueMapper) Stream
@@ -75,18 +75,17 @@ type kStreamOptions struct {
 type kStream struct {
 	rootStream  *kStream
 	source      *kSourceBuilder
-	topology    *node.TopologyBuilder
+	topology    *topology.TopologyBuilder
 	root        bool
 	config      *kStreamOptions
 	streams     []*kStream
-	NodeBuilder node.NodeBuilder
-	Node        node.Node
+	NodeBuilder topology.NodeBuilder
+	Node        topology.Node
 	keySelected bool
 	topic       topic
 }
 
 func (c *kStreamOptions) apply(options ...Option) {
-
 	// apply defaults
 	c.processorRetryCount = 1
 	c.processorRetryInterval = 0
@@ -213,7 +212,6 @@ func withBuilder(builder *StreamBuilder) Option {
 }
 
 func newKStream(topic topic, keyEncoder encoding.Builder, valEncoder encoding.Builder, parent *kStream, options ...Option) *kStream {
-
 	config := new(kStreamOptions)
 	config.apply(options...)
 
@@ -251,7 +249,6 @@ func (s *kStream) Branch(branches []branch.Details, opts ...Option) []Stream {
 }
 
 func (s *kStream) branch(branches []branch.Details, parallel bool, opts ...Option) []Stream {
-
 	bs := &branch.Splitter{
 		Id: atomic.AddInt32(&nodeCounter, 1),
 	}
@@ -339,7 +336,6 @@ func (s *kStream) Transform(transformer processors.TransFunc) Stream {
 }
 
 func (s *kStream) Filter(filter processors.FilterFunc) Stream {
-
 	f := &processors.Filter{
 		FilterFunc: filter,
 		Id:         atomic.AddInt32(&nodeCounter, 1),
@@ -384,7 +380,6 @@ func (s *kStream) JoinGlobalTable(stream Stream, keyMapper join.KeyMapper, valMa
 }
 
 func (s *kStream) JoinStream(stream Stream, valMapper join.ValueMapper, opts ...RepartitionOption) Stream {
-
 	rightStream, ok := stream.(*kStream)
 	if !ok {
 		log.Fatal(`k-stream.kStream`,
@@ -542,7 +537,6 @@ func (s *kStream) Process(processor processors.ProcessFunc) Stream {
 }
 
 func (s *kStream) Through(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption) Stream {
-
 	if keyEncoder == nil {
 		log.Fatal(`k-stream.kStream`, fmt.Sprintf(`keyEncoder cannot be null for sink [%s]`, topic))
 	}
@@ -561,7 +555,6 @@ func (s *kStream) Through(topic string, keyEncoder encoding.Builder, valEncoder 
 }
 
 func (s *kStream) To(topic string, keyEncoder encoding.Builder, valEncoder encoding.Builder, options ...SinkOption) {
-
 	if keyEncoder == nil {
 		log.Fatal(`k-stream.kStream`, fmt.Sprintf(`keyEncoder cannot be null for sink [%s]`, topic))
 	}
@@ -600,7 +593,7 @@ func (s *kStream) To(topic string, keyEncoder encoding.Builder, valEncoder encod
 
 func (s *kStream) Build() ([]*kStream, error) {
 	var streams []*kStream
-	t := new(node.TopologyBuilder)
+	t := new(topology.TopologyBuilder)
 	t.Source = s.source
 	err := s.build(s.NodeBuilder)
 	if err != nil {
@@ -625,8 +618,7 @@ func (s *kStream) Build() ([]*kStream, error) {
 	return streams, nil
 }
 
-func (s *kStream) build(node node.NodeBuilder) error {
-
+func (s *kStream) build(node topology.NodeBuilder) error {
 	switch nd := node.(type) {
 	case *join.GlobalTableJoiner:
 		nd.Registry = s.config.builder.storeRegistry
@@ -650,8 +642,8 @@ func (s *kStream) build(node node.NodeBuilder) error {
 
 type SourceNode struct {
 	Id            int32
-	childs        []node.Node
-	childBuilders []node.NodeBuilder
+	childs        []topology.Node
+	childBuilders []topology.NodeBuilder
 }
 
 func (sn *SourceNode) Name() string {
@@ -662,24 +654,24 @@ func (sn *SourceNode) Close() {
 	panic("implement me")
 }
 
-func (sn *SourceNode) Childs() []node.Node {
+func (sn *SourceNode) Childs() []topology.Node {
 	return sn.childs
 }
 
-func (sn *SourceNode) ChildBuilders() []node.NodeBuilder {
+func (sn *SourceNode) ChildBuilders() []topology.NodeBuilder {
 	return sn.childBuilders
 }
 
-func (sn *SourceNode) AddChildBuilder(builder node.NodeBuilder) {
+func (sn *SourceNode) AddChildBuilder(builder topology.NodeBuilder) {
 	sn.childBuilders = append(sn.childBuilders, builder)
 }
 
-func (sn *SourceNode) AddChild(node node.Node) {
+func (sn *SourceNode) AddChild(node topology.Node) {
 	sn.childs = append(sn.childs, node)
 }
 
-func (sn *SourceNode) Build() (node.Node, error) {
-	var childs []node.Node
+func (sn *SourceNode) Build() (topology.Node, error) {
+	var childs []topology.Node
 	//var childBuilders []node.NodeBuilder
 
 	for _, childBuilder := range sn.childBuilders {
@@ -711,6 +703,6 @@ func (sn *SourceNode) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut
 	return kIn, vIn, true, nil
 }
 
-func (sn *SourceNode) Type() node.Type {
+func (sn *SourceNode) Type() topology.Type {
 	panic("implement me")
 }

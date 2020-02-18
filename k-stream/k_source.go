@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/k-stream/encoding"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 )
 
 type kSource struct {
@@ -23,7 +23,7 @@ type kSourceBuilder struct {
 	info              map[string]string
 }
 
-func (b *kSourceBuilder) Build() (node.Source, error) {
+func (b *kSourceBuilder) Build() (topology.Source, error) {
 	return &kSource{
 		name:       b.name,
 		topic:      b.topic,
@@ -72,6 +72,6 @@ func (s *kSource) Next() bool {
 	return true
 }
 
-func (s *kSource) Type() node.Type {
-	return node.TypeSource
+func (s *kSource) Type() topology.Type {
+	return topology.TypeSource
 }

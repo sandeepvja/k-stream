@@ -37,23 +37,23 @@ func TestFilter_Process_Should_Filter(t *testing.T) {
 }
 
 func TestFilter_Process_Should_Return_Org_Vals_On_Error(t *testing.T) {
-	kOrg := 1
-	vOrg := ``
+	kOrg := `100`
+	vOrg := `100`
 
 	k, v, next, err := filter.Run(context.Background(), kOrg, vOrg)
 	if err == nil {
 		t.Fail()
 	}
 
-	if !next {
+	if next {
 		t.Fail()
 	}
 
-	if k != kOrg {
+	if k != nil {
 		t.Fail()
 	}
 
-	if v != vOrg {
+	if v != nil {
 		t.Fail()
 	}
 }

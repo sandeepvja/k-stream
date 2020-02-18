@@ -10,7 +10,7 @@ package processors
 import (
 	"context"
 	"github.com/pickme-go/errors"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 )
 
 type ProcessFunc func(ctx context.Context, key, value interface{}) error
@@ -18,23 +18,23 @@ type ProcessFunc func(ctx context.Context, key, value interface{}) error
 type Processor struct {
 	Id            int32
 	ProcessFunc   ProcessFunc
-	childBuilders []node.NodeBuilder
-	childs        []node.Node
+	childBuilders []topology.NodeBuilder
+	childs        []topology.Node
 }
 
-func (p *Processor) Childs() []node.Node {
+func (p *Processor) Childs() []topology.Node {
 	return p.childs
 }
 
-func (p *Processor) ChildBuilders() []node.NodeBuilder {
+func (p *Processor) ChildBuilders() []topology.NodeBuilder {
 	return p.childBuilders
 }
 
-func (p *Processor) AddChildBuilder(builder node.NodeBuilder) {
+func (p *Processor) AddChildBuilder(builder topology.NodeBuilder) {
 	p.childBuilders = append(p.childBuilders, builder)
 }
 
-func (p *Processor) AddChild(node node.Node) {
+func (p *Processor) AddChild(node topology.Node) {
 	p.childs = append(p.childs, node)
 }
 
@@ -54,8 +54,8 @@ func (p *Processor) Run(ctx context.Context, kIn, vIn interface{}) (interface{},
 	return kIn, vIn, true, nil
 }
 
-func (p *Processor) Build() (node.Node, error) {
-	var childs []node.Node
+func (p *Processor) Build() (topology.Node, error) {
+	var childs []topology.Node
 	//var childBuilders []node.NodeBuilder
 
 	for _, childBuilder := range p.childBuilders {
@@ -82,8 +82,8 @@ func (p *Processor) Name() string {
 	return `processor`
 }
 
-func (p *Processor) Type() node.Type {
-	return node.Type(`processor`)
+func (p *Processor) Type() topology.Type {
+	return topology.Type(`processor`)
 }
 
 func (p *Processor) ID() int32 {

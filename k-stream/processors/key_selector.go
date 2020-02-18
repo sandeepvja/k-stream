@@ -3,7 +3,7 @@ package processors
 import (
 	"context"
 	"github.com/pickme-go/errors"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 )
 
 type SelectKeyFunc func(ctx context.Context, key, value interface{}) (kOut interface{}, err error)
@@ -11,12 +11,12 @@ type SelectKeyFunc func(ctx context.Context, key, value interface{}) (kOut inter
 type KeySelector struct {
 	Id            int32
 	SelectKeyFunc SelectKeyFunc
-	childBuilders []node.NodeBuilder
-	childs        []node.Node
+	childBuilders []topology.NodeBuilder
+	childs        []topology.Node
 }
 
-func (ks *KeySelector) Build() (node.Node, error) {
-	var childs []node.Node
+func (ks *KeySelector) Build() (topology.Node, error) {
+	var childs []topology.Node
 	//var childBuilders []node.NodeBuilder
 
 	for _, childBuilder := range ks.childBuilders {
@@ -35,11 +35,11 @@ func (ks *KeySelector) Build() (node.Node, error) {
 	}, nil
 }
 
-func (ks *KeySelector) ChildBuilders() []node.NodeBuilder {
+func (ks *KeySelector) ChildBuilders() []topology.NodeBuilder {
 	return ks.childBuilders
 }
 
-func (ks *KeySelector) AddChildBuilder(builder node.NodeBuilder) {
+func (ks *KeySelector) AddChildBuilder(builder topology.NodeBuilder) {
 	ks.childBuilders = append(ks.childBuilders, builder)
 }
 
@@ -67,14 +67,14 @@ func (ks *KeySelector) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOu
 	return k, vOut, true, err
 }
 
-func (ks *KeySelector) Type() node.Type {
-	return node.Type(`key_selector`)
+func (ks *KeySelector) Type() topology.Type {
+	return topology.Type(`key_selector`)
 }
 
-func (ks *KeySelector) Childs() []node.Node {
+func (ks *KeySelector) Childs() []topology.Node {
 	return ks.childs
 }
 
-func (ks *KeySelector) AddChild(node node.Node) {
+func (ks *KeySelector) AddChild(node topology.Node) {
 	ks.childs = append(ks.childs, node)
 }

@@ -10,6 +10,7 @@ package kstream
 import (
 	"fmt"
 	"github.com/Shopify/sarama"
+	"github.com/pickme-go/errors"
 	"github.com/pickme-go/k-stream/admin"
 	"github.com/pickme-go/k-stream/backend"
 	"github.com/pickme-go/k-stream/consumer"
@@ -55,17 +56,15 @@ type GlobalTableStreamConfig struct {
 }
 
 // newGlobalTableStream starts a
-func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableStreamConfig) *globalTableStream {
+func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableStreamConfig) (*globalTableStream, error) {
 	offsetBackend, err := config.BackendBuilder(offsetBackendName)
 	if err != nil {
-		config.Logger.Fatal(err)
+		return nil, errors.WithPrevious(err, `offset backend build failed`)
 	}
 
 	stream := &globalTableStream{
-		restartOnFailure:      true,
-		restartOnFailureCount: 5,
-		tables:                make(map[string]*tableInstance),
-		logger:                config.Logger.NewLog(log.Prefixed(`global-tables`)),
+		tables: make(map[string]*tableInstance),
+		logger: config.Logger.NewLog(log.Prefixed(`global-tables`)),
 	}
 
 	var topics []string
@@ -76,8 +75,7 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 	// get partition information's for topics
 	info, err := config.KafkaAdmin.FetchInfo(topics)
 	if err != nil {
-		config.Logger.Fatal(
-			fmt.Sprintf(`cannot fetch topic info - %+v`, err))
+		return nil, errors.WithPrevious(err, `cannot fetch topic info`)
 	}
 
 	consumedLatency := config.Metrics.Observer(metrics.MetricConf{
@@ -88,8 +86,7 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 	for _, topic := range info {
 
 		if topic.Error != nil && topic.Error != sarama.ErrNoError {
-			config.Logger.Fatal(
-				fmt.Sprintf(`cannot get topic info for %s due to %s`, topic.Name, topic.Error.Error()))
+			return nil, errors.WithPrevious(topic.Error, fmt.Sprintf(`cannot get topic info for %s`, topic.Name))
 		}
 		for i := int32(len(topic.Partitions)) - 1; i >= 0; i-- {
 			partitionConsumer, err := config.ConsumerBuilder.Build(
@@ -97,7 +94,7 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 				consumer.BuilderWithLogger(config.Logger.NewLog(log.Prefixed(fmt.Sprintf(`global-table.%s-%d`, topic.Name, i)))),
 			)
 			if err != nil {
-				config.Logger.Fatal(err)
+				return nil, errors.WithPrevious(err, `cannot build partition consumer`)
 			}
 
 			t := new(tableInstance)
@@ -119,33 +116,32 @@ func newGlobalTableStream(tables map[string]*globalKTable, config *GlobalTableSt
 		}
 	}
 
-	return stream
+	return stream, nil
 }
 
 // StartStreams starts all the tables
 func (s *globalTableStream) StartStreams(runWg *sync.WaitGroup) {
 	s.logger.Info(`sync started...`)
 	defer s.logger.Info(`syncing completed`)
+
 	// create a waitgroup with the num of tables for table syncing
 	syncWg := new(sync.WaitGroup)
 	syncWg.Add(len(s.tables))
 	go func() {
+
 		// run waitgroup is for running table go routine
 		for _, table := range s.tables {
-
 			runWg.Add(1)
 			go func(t *tableInstance, syncWg *sync.WaitGroup) {
 				t.Init()
 				syncWg.Done()
-				// once the table stopped mark un waitgroup as done
+				// once the table stopped mark run waitgroup as done
 				<-t.stopped
 				runWg.Done()
 			}(table, syncWg)
 		}
-
 	}()
-
-	// method should be blocked until table syncing is done
+	// method should be blocked until the syncing is done
 	syncWg.Wait()
 	s.printSyncInfo()
 }
@@ -159,11 +155,17 @@ func (s *globalTableStream) printSyncInfo() {
 func (s *globalTableStream) stop() {
 	s.logger.Info(`streams closing...`)
 	defer s.logger.Info(`streams closed`)
+	wg := new(sync.WaitGroup)
+	wg.Add(len(s.tables))
 	for _, t := range s.tables {
-		if err := t.consumer.Close(); err != nil {
-			t.logger.Error(err)
-			continue
-		}
-		t.logger.Info(`stream closed`)
+		go func(wg *sync.WaitGroup, t *tableInstance) {
+			defer wg.Done()
+			if err := t.consumer.Close(); err != nil {
+				t.logger.Error(err)
+				return
+			}
+			t.logger.Info(`stream closed`)
+		}(wg, t)
 	}
+	wg.Wait()
 }

@@ -3,7 +3,7 @@ package branch
 import (
 	"context"
 	"github.com/pickme-go/errors"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 )
 
 type Predicate func(ctx context.Context, key interface{}, val interface{}) (bool, error)
@@ -15,28 +15,28 @@ type Details struct {
 
 type Splitter struct {
 	Id             int32
-	Branches       []node.Node
-	BranchBuilders []node.NodeBuilder
+	Branches       []topology.Node
+	BranchBuilders []topology.NodeBuilder
 }
 
-func (bs *Splitter) ChildBuilders() []node.NodeBuilder {
+func (bs *Splitter) ChildBuilders() []topology.NodeBuilder {
 	return bs.BranchBuilders
 }
 
-func (bs *Splitter) Childs() []node.Node {
+func (bs *Splitter) Childs() []topology.Node {
 	return bs.Branches
 }
 
-func (bs *Splitter) AddChildBuilder(builder node.NodeBuilder) {
+func (bs *Splitter) AddChildBuilder(builder topology.NodeBuilder) {
 	bs.BranchBuilders = append(bs.BranchBuilders, builder)
 }
 
-func (bs *Splitter) AddChild(node node.Node) {
+func (bs *Splitter) AddChild(node topology.Node) {
 	bs.Branches = append(bs.Branches, node)
 }
 
-func (bs *Splitter) Build() (node.Node, error) {
-	var branches []node.Node
+func (bs *Splitter) Build() (topology.Node, error) {
+	var branches []topology.Node
 	//var childBuilders []node.NodeBuilder
 
 	for _, childBuilder := range bs.BranchBuilders {
@@ -83,36 +83,36 @@ func (bs *Splitter) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut i
 	return kIn, kOut, true, nil
 }
 
-func (bs *Splitter) Type() node.Type {
-	return node.Type(`branch_splitter`)
+func (bs *Splitter) Type() topology.Type {
+	return topology.Type(`branch_splitter`)
 }
 
 type Branch struct {
 	Id            int32
 	Name          string
 	Predicate     Predicate
-	childBuilders []node.NodeBuilder
-	childs        []node.Node
+	childBuilders []topology.NodeBuilder
+	childs        []topology.Node
 }
 
-func (b *Branch) Childs() []node.Node {
+func (b *Branch) Childs() []topology.Node {
 	return b.childs
 }
 
-func (b *Branch) ChildBuilders() []node.NodeBuilder {
+func (b *Branch) ChildBuilders() []topology.NodeBuilder {
 	return b.childBuilders
 }
 
-func (b *Branch) AddChildBuilder(builder node.NodeBuilder) {
+func (b *Branch) AddChildBuilder(builder topology.NodeBuilder) {
 	b.childBuilders = append(b.childBuilders, builder)
 }
 
-func (b *Branch) AddChild(node node.Node) {
+func (b *Branch) AddChild(node topology.Node) {
 	b.childs = append(b.childs, node)
 }
 
-func (b *Branch) Build() (node.Node, error) {
-	var childs []node.Node
+func (b *Branch) Build() (topology.Node, error) {
+	var childs []topology.Node
 	//var childBuilders []node.NodeBuilder
 
 	for _, childBuilder := range b.childBuilders {
@@ -150,6 +150,6 @@ func (b *Branch) Run(ctx context.Context, kIn, vIn interface{}) (kOut, vOut inte
 	return kIn, kOut, true, nil
 }
 
-func (b *Branch) Type() node.Type {
-	return node.TypeBranch
+func (b *Branch) Type() topology.Type {
+	return topology.TypeBranch
 }

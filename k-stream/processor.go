@@ -15,7 +15,7 @@ import (
 	"github.com/pickme-go/k-stream/data"
 	"github.com/pickme-go/k-stream/k-stream/changelog"
 	kContext "github.com/pickme-go/k-stream/k-stream/context"
-	"github.com/pickme-go/k-stream/k-stream/internal/node"
+	"github.com/pickme-go/k-stream/k-stream/topology"
 	"github.com/pickme-go/k-stream/k-stream/worker_pool"
 	"github.com/pickme-go/log/v2"
 	"github.com/pickme-go/metrics/v2"
@@ -26,7 +26,7 @@ import (
 type processor struct {
 	id               string
 	topicPartition   consumer.TopicPartition
-	topologyBuilder  *node.TopologyBuilder
+	topologyBuilder  *topology.TopologyBuilder
 	changelogEnabled bool
 	changelog        changelog.Changelog
 	changelogBuilder changelog.Builder
