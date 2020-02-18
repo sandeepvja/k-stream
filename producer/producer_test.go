@@ -1,33 +1,51 @@
 package producer
 
 import (
-	"gitlab.mytaxi.lk/pickme/k-stream/consumer"
+	"context"
+	"github.com/pickme-go/k-stream/admin"
+	"github.com/pickme-go/k-stream/data"
 	"testing"
 )
 
-func TestMockProducer_Produce(t *testing.T) {
-	producer := NewMockProducer(t)
+func setupMockTopics(t *testing.T, topics *admin.Topics) {
+	if err := topics.AddTopic(&admin.MockTopic{
+		Name: "",
+		Meta: &admin.Topic{
+			Name:          "testing",
+			NumPartitions: 2,
+		},
+	}); err != nil {
+		t.Error(err)
+	}
 
-	msg := &consumer.Record{
-		Key:       []byte(string(`100`)),
-		Value:     []byte(string(`100`)),
+}
+
+func TestMockProducer_Produce(t *testing.T) {
+	topics := admin.NewMockTopics()
+	setupMockTopics(t, topics)
+	producer := NewMockProducer(topics)
+	msg := &data.Record{
+		Key:       []byte(`100`),
+		Value:     []byte(`100`),
 		Partition: 1,
 	}
 
-	p, _, err := producer.Produce(msg)
+	p, o, err := producer.Produce(context.Background(), msg)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if p != 1 {
+	if p != 0 || o != 0 {
 		t.Fail()
 	}
 }
 
 func TestMockProducer_ProduceBatch(t *testing.T) {
-	producer := NewMockProducer(t)
+	topics := admin.NewMockTopics()
+	setupMockTopics(t, topics)
+	producer := NewMockProducer(topics)
 
-	msg1 := &consumer.Record{
+	msg1 := &data.Record{
 		Key:       []byte(string(`100`)),
 		Value:     []byte(string(`100`)),
 		Partition: 1,
@@ -36,7 +54,7 @@ func TestMockProducer_ProduceBatch(t *testing.T) {
 	msg2 := *msg1
 	msg2.Key = []byte(string(`100`))
 
-	err := producer.ProduceBatch([]*consumer.Record{msg1, &msg2})
+	err := producer.ProduceBatch(context.Background(), []*data.Record{msg1, &msg2})
 	if err != nil {
 		t.Error(err)
 	}
