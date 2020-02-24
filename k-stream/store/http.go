@@ -99,7 +99,7 @@ func MakeEndpoints(host string, registry Registry, logger log.Logger) {
 
 	r := mux.NewRouter()
 	h := handler{
-		logger: loggerq,
+		logger: logger,
 	}
 
 	r.HandleFunc(`/stores`, func(writer http.ResponseWriter, request *http.Request) {
