@@ -98,7 +98,9 @@ func (h *handler) storeExist(store string, registry Registry) bool {
 func MakeEndpoints(host string, registry Registry, logger log.Logger) {
 
 	r := mux.NewRouter()
-	h := handler{}
+	h := handler{
+		logger: logger,
+	}
 
 	r.HandleFunc(`/stores`, func(writer http.ResponseWriter, request *http.Request) {
 
