@@ -6,6 +6,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/pickme-go/errors"
 	"github.com/pickme-go/metrics"
+	"time"
 )
 
 func init() {
@@ -112,8 +113,10 @@ func (c *consumer) consume(ctx context.Context, tps []string, h sarama.ConsumerG
 CLoop:
 	for {
 		if err := c.saramaGroup.Consume(ctx, tps, h); err != nil {
-			c.config.Logger.Error(`k-stream.consumer`, err)
-			break
+			t := 2 * time.Second
+			c.config.Logger.Error(`consumer`, fmt.Sprintf(`consumer err (%s) while consuming. retrying in %s`, err, t.String()))
+			time.Sleep(t)
+			continue CLoop
 		}
 
 		select {
