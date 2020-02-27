@@ -153,6 +153,11 @@ func (c *partitionConsumer) Id() string {
 }
 
 func (c *partitionConsumer) consumeErrors(consumer sarama.PartitionConsumer) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("partition consumer recovered in f", r)
+		}
+	}()
 	for err := range consumer.Errors() {
 		c.logger.Error(c.logPrefix(), fmt.Sprintf("Error: %+v", err))
 		c.consumerErrors <- &Error{err}
