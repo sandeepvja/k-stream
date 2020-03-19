@@ -54,6 +54,8 @@ func NewRegistry(config *RegistryConfig) Registry {
 }
 
 func (r *registry) Register(store Store) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	name := store.Name()
 	if _, ok := r.Stores[name]; ok {
 		r.logger.Fatal(fmt.Sprintf(`store [%s] already exist`, name))
