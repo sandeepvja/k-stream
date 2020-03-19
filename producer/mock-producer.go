@@ -6,11 +6,13 @@ import (
 	"github.com/pickme-go/k-stream/data"
 	"hash"
 	"hash/fnv"
+	"sync"
 )
 
 type MockStreamProducer struct {
 	hasher hash.Hash32
 	topics *admin.Topics
+	mu     sync.Mutex
 }
 
 func NewMockProducer(topics *admin.Topics) *MockStreamProducer {
@@ -21,8 +23,11 @@ func NewMockProducer(topics *admin.Topics) *MockStreamProducer {
 }
 
 func (msp *MockStreamProducer) Produce(ctx context.Context, message *data.Record) (partition int32, offset int64, err error) {
+	msp.mu.Lock()
+	defer msp.mu.Unlock()
 	msp.hasher.Reset()
 	_, err = msp.hasher.Write(message.Key)
+
 	if err != nil {
 		return partition, offset, err
 	}
